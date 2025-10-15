@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { logger } from 'hono/logger';
 import { HTTPException } from 'hono/http-exception';
+import { swaggerUI } from '@hono/swagger-ui';
 
 import routes from './routes';
 import { env } from './env';
@@ -30,6 +31,17 @@ app.use(
 
 app.route('/', routes);
 app.on(['POST', 'GET'], '/api/auth/*', c => auth.handler(c.req.raw));
+
+// Swagger UI documentation
+app.get('/docs', swaggerUI({ 
+  url: '/openapi.json'
+}));
+
+// Serve OpenAPI specification
+app.get('/openapi.json', async (c) => {
+  const openApiSpec = await import('../openapi.json');
+  return c.json(openApiSpec.default);
+});
 
 app.onError((err, c) => {
   let extra = {};

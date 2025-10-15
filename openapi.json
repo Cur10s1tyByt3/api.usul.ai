@@ -1,0 +1,1662 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Usul API",
+    "description": "API for accessing Islamic texts, books, authors, and AI-powered chat functionality",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.usul.ai",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Books",
+      "description": "Operations related to Islamic books and texts"
+    },
+    {
+      "name": "Authors",
+      "description": "Operations related to Islamic authors and scholars"
+    },
+    {
+      "name": "Search",
+      "description": "Search functionality across books, authors, and content"
+    },
+    {
+      "name": "Chat",
+      "description": "AI-powered chat and query functionality"
+    },
+    {
+      "name": "Genres",
+      "description": "Operations related to book genres and categories"
+    },
+    {
+      "name": "Regions",
+      "description": "Operations related to geographical regions"
+    },
+    {
+      "name": "Centuries",
+      "description": "Operations related to historical centuries"
+    },
+    {
+      "name": "Collections",
+      "description": "Operations related to book collections"
+    },
+    {
+      "name": "System",
+      "description": "System and utility endpoints"
+    }
+  ],
+  "paths": {
+    "/book/details/{bookSlug}": {
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get book details",
+        "description": "Retrieve detailed information about a specific book including content and metadata",
+        "parameters": [
+          {
+            "name": "bookSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug or ID of the book"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - book has no versions or AI not supported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/book/page/{bookSlug}/{versionId}": {
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get book page content",
+        "description": "Retrieve the content of a specific page from a book version",
+        "parameters": [
+          {
+            "name": "bookSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug or ID of the book"
+          },
+          {
+            "name": "versionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The version ID of the book"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Page number to retrieve"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page content retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookPageResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book, version, or page not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/book/by-slug/{slug}": {
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get book by slug",
+        "description": "Retrieve book information using its slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug of the book"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Book"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/book/homepage-sections": {
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get homepage sections",
+        "description": "Retrieve book sections for homepage display",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Homepage sections retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "featured": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Book"
+                      }
+                    },
+                    "recent": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Book"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/book/count": {
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get book count",
+        "description": "Get the total number of books in the system",
+        "responses": {
+          "200": {
+            "description": "Book count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of books"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/author/{slug}": {
+      "get": {
+        "tags": ["Authors"],
+        "summary": "Get author by slug",
+        "description": "Retrieve author information using their slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug of the author"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Author retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Author"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Author not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/author/count": {
+      "get": {
+        "tags": ["Authors"],
+        "summary": "Get author count",
+        "description": "Get the total number of authors in the system",
+        "responses": {
+          "200": {
+            "description": "Author count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of authors"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/books": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Search books",
+        "description": "Search for books with various filters and sorting options",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "genres",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of genre IDs to filter by"
+          },
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of author IDs to filter by"
+          },
+          {
+            "name": "regions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of region IDs to filter by"
+          },
+          {
+            "name": "yearRange",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated year range (e.g., '1000,1500')"
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of book IDs to filter by"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["relevance", "year-asc", "year-desc", "alphabetical-asc", "alphabetical-desc"]
+            },
+            "description": "Sort order for results"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookSearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/authors": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Search authors",
+        "description": "Search for authors with various filters",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorSearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Global search",
+        "description": "Search across books, authors, and genres with content search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Global search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalSearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/{bookId}/{versionId}": {
+      "post": {
+        "tags": ["Chat"],
+        "summary": "Single book chat",
+        "description": "Chat with AI about a specific book version",
+        "parameters": [
+          {
+            "name": "bookId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the book"
+          },
+          {
+            "name": "versionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The version ID of the book"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": ["assistant", "user"]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["role", "content"]
+                    },
+                    "minItems": 1
+                  },
+                  "isRetry": {
+                    "type": "boolean",
+                    "description": "Whether this is a retry of a previous request"
+                  },
+                  "chatId": {
+                    "type": "string",
+                    "description": "Optional chat session ID"
+                  }
+                },
+                "required": ["messages"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat response stream",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Streaming response from AI"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/multi": {
+      "post": {
+        "tags": ["Chat"],
+        "summary": "Multi-book chat",
+        "description": "Chat with AI across multiple books, authors, or genres",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": ["assistant", "user"]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["role", "content"]
+                    },
+                    "minItems": 1
+                  },
+                  "bookIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of book IDs to include in search"
+                  },
+                  "authorIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of author IDs to include in search"
+                  },
+                  "genreIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of genre IDs to include in search"
+                  },
+                  "isRetry": {
+                    "type": "boolean",
+                    "description": "Whether this is a retry of a previous request"
+                  },
+                  "chatId": {
+                    "type": "string",
+                    "description": "Optional chat session ID"
+                  }
+                },
+                "required": ["messages"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat response stream",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Streaming response from AI"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/genre/homepage": {
+      "get": {
+        "tags": ["Genres"],
+        "summary": "Get homepage genres",
+        "description": "Get featured genres for homepage display",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Homepage genres retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Genre"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/genre/": {
+      "get": {
+        "tags": ["Genres"],
+        "summary": "Get all genres",
+        "description": "Get all genres with optional filters",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          },
+          {
+            "name": "bookIds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of book IDs to filter by"
+          },
+          {
+            "name": "yearRange",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated year range (e.g., '1000,1500')"
+          },
+          {
+            "name": "authorId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Author ID to filter by"
+          },
+          {
+            "name": "regionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Region ID to filter by"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Genres retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Genre"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/genre/count": {
+      "get": {
+        "tags": ["Genres"],
+        "summary": "Get genre count",
+        "description": "Get the total number of genres in the system",
+        "responses": {
+          "200": {
+            "description": "Genre count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of genres"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/genre/{slug}": {
+      "get": {
+        "tags": ["Genres"],
+        "summary": "Get genre by slug",
+        "description": "Retrieve genre information using its slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug of the genre"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Genre retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Genre"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Genre not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/region/": {
+      "get": {
+        "tags": ["Regions"],
+        "summary": "Get all regions",
+        "description": "Get all geographical regions",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Regions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Region"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/region/count": {
+      "get": {
+        "tags": ["Regions"],
+        "summary": "Get region count",
+        "description": "Get the total number of regions in the system",
+        "responses": {
+          "200": {
+            "description": "Region count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of regions"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/region/{slug}": {
+      "get": {
+        "tags": ["Regions"],
+        "summary": "Get region by slug",
+        "description": "Retrieve region information using its slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug of the region"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Region retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Region"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Region not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/century/": {
+      "get": {
+        "tags": ["Centuries"],
+        "summary": "Get all centuries",
+        "description": "Get all available centuries",
+        "responses": {
+          "200": {
+            "description": "Centuries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "century": {
+                        "type": "integer",
+                        "description": "Century number"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "Century label"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/century/{centuryNumber}": {
+      "get": {
+        "tags": ["Centuries"],
+        "summary": "Get century details",
+        "description": "Get details about a specific century",
+        "parameters": [
+          {
+            "name": "centuryNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "The century number"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Century details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "century": {
+                      "type": "integer"
+                    },
+                    "books": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Book"
+                      }
+                    },
+                    "authors": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Author"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/": {
+      "get": {
+        "tags": ["Collections"],
+        "summary": "Get all collections",
+        "description": "Get all book collections",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collections retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Collection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/total": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Get total counts",
+        "description": "Get total counts for books, authors, regions, and genres",
+        "responses": {
+          "200": {
+            "description": "Total counts retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "books": {
+                      "type": "integer",
+                      "description": "Total number of books"
+                    },
+                    "authors": {
+                      "type": "integer",
+                      "description": "Total number of authors"
+                    },
+                    "regions": {
+                      "type": "integer",
+                      "description": "Total number of regions"
+                    },
+                    "genres": {
+                      "type": "integer",
+                      "description": "Total number of genres"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uptime": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Get uptime",
+        "description": "Get system uptime information",
+        "responses": {
+          "200": {
+            "description": "Uptime information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uptime": {
+                      "type": "number",
+                      "description": "Uptime in seconds"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Current timestamp"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Book": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the book"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
+          "primaryName": {
+            "type": "string",
+            "description": "Primary name of the book"
+          },
+          "secondaryName": {
+            "type": "string",
+            "description": "Secondary name of the book"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Year of publication"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookVersion"
+            }
+          }
+        },
+        "required": ["id", "slug", "primaryName", "author"]
+      },
+      "BookVersion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the version"
+          },
+          "value": {
+            "type": "string",
+            "description": "Version identifier"
+          },
+          "source": {
+            "type": "string",
+            "description": "Source of the version"
+          },
+          "aiSupported": {
+            "type": "boolean",
+            "description": "Whether AI is supported for this version"
+          },
+          "keywordSupported": {
+            "type": "boolean",
+            "description": "Whether keyword search is supported"
+          }
+        },
+        "required": ["id", "value", "source"]
+      },
+      "Author": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the author"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
+          "primaryName": {
+            "type": "string",
+            "description": "Primary name of the author"
+          },
+          "secondaryName": {
+            "type": "string",
+            "description": "Secondary name of the author"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Year of birth/death"
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            }
+          }
+        },
+        "required": ["id", "slug", "primaryName"]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the location"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the location"
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "Region": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the region"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the region"
+          }
+        },
+        "required": ["id", "slug", "name"]
+      },
+      "Genre": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the genre"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the genre"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for UI display"
+          },
+          "pattern": {
+            "type": "integer",
+            "description": "Pattern number for UI display"
+          }
+        },
+        "required": ["id", "slug", "name"]
+      },
+      "Collection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the collection"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the collection"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the collection"
+          },
+          "books": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Book"
+            }
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "BookDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/Book"
+          },
+          "headings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "level": {
+                  "type": "integer"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "page": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "publication_details": {
+            "type": "object",
+            "properties": {
+              "publisher": {
+                "type": "string"
+              },
+              "year": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "required": ["book"]
+      },
+      "BookPageResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Page content"
+          },
+          "page": {
+            "type": "integer",
+            "description": "Page number"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Total number of pages"
+          }
+        },
+        "required": ["content", "page"]
+      },
+      "BookSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "hits": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Book"
+                }
+              },
+              "found": {
+                "type": "integer",
+                "description": "Total number of results found"
+              }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer"
+              },
+              "perPage": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            }
+          },
+          "selectedAuthors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Author"
+            },
+            "nullable": true
+          }
+        },
+        "required": ["results", "pagination"]
+      },
+      "AuthorSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "hits": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Author"
+                }
+              },
+              "found": {
+                "type": "integer",
+                "description": "Total number of results found"
+              }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer"
+              },
+              "perPage": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "required": ["results", "pagination"]
+      },
+      "GlobalSearchResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "versionId": {
+                      "type": "string"
+                    },
+                    "book": {
+                      "$ref": "#/components/schemas/Book"
+                    },
+                    "node": {
+                      "type": "object",
+                      "description": "Search result node"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "books": {
+            "type": "object",
+            "properties": {
+              "hits": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Book"
+                }
+              },
+              "found": {
+                "type": "integer"
+              }
+            }
+          },
+          "authors": {
+            "type": "object",
+            "properties": {
+              "hits": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Author"
+                }
+              },
+              "found": {
+                "type": "integer"
+              }
+            }
+          },
+          "genres": {
+            "type": "object",
+            "properties": {
+              "hits": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Genre"
+                }
+              },
+              "found": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "required": ["content", "books", "authors", "genres"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "description": "HTTP status code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    }
+  }
+}
