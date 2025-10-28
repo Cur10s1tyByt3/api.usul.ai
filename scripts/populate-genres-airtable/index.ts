@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { genresAirtable } from '../sync-advanced-genres/airtable';
+import { genresAirtable } from '../util/airtable';
 import { chunk } from '@/lib/utils';
 import { LocalizedEntry } from '@/types/typesense/localized-entry';
 

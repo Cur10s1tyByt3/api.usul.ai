@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { genresAirtable } from './airtable';
+import { genresAirtable } from '../util/airtable';
 import { translateAndTransliterateName } from './openai';
 import slugify from 'slugify';
 import { createInterface } from 'node:readline/promises';
