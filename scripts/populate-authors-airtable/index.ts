@@ -41,7 +41,7 @@ const main = async () => {
           'Author ID': a.id,
           'Arabic Name': getText(a.primaryNameTranslations, 'ar'),
           'English Name': getText(a.primaryNameTranslations, 'en'),
-          'Death Year': a.year || 0, 
+          'Death Year (Hijri)': a.year || 0, 
           'Number of Books': a.numberOfBooks || 0,
         },
       }));
