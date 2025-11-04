@@ -20,8 +20,17 @@ export const BOOKS_COLLECTION = {
   DEFAULT_PER_PAGE: 20,
 };
 
+export const advancedGenresQueryWeights = {
+  1: ['nameTranslations.text'],
+};
+
 export const genresQueryWeights = {
   1: ['nameTranslations.text'],
+};
+
+export const ADVANCED_GENRES_COLLECTION = {
+  INDEX: 'advancedGenres',
+  DEFAULT_PER_PAGE: 5,
 };
 
 export const GENRES_COLLECTION = {

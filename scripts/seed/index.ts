@@ -171,6 +171,34 @@ async function seedAuthors() {
   );
 }
 
+async function seedAdvancedGenres() {
+  const file = resolveCacheFile('advanced-genres.json');
+  const genres = readJson<UnknownRecord[]>(file);
+
+  const base = genres.map(g => ({
+    id: g.id,
+    slug: g.slug,
+    transliteration: g.transliteration ?? null,
+    extraProperties: g.extraProperties ?? {},
+    numberOfBooks: g.numberOfBooks ?? 0,
+    parentGenre: g.parentGenreId ?? null,
+  }));
+  if (base.length) await db.advancedGenre.createMany({ data: base, skipDuplicates: true });
+
+  const names = genres.flatMap(g =>
+    (g.nameTranslations ?? []).map((t: any) => ({
+      advancedGenreId: g.id,
+      locale: t.locale,
+      text: t.text,
+    })),
+  );
+  if (names.length)
+    await db.advancedGenreName.createMany({ data: names, skipDuplicates: true });
+
+  console.log(`Seeded advanced genres: ${base.length}`);
+  
+}
+
 async function seedGenres() {
   const file = resolveCacheFile('genres.json');
   const genres = readJson<UnknownRecord[]>(file);
@@ -284,6 +312,7 @@ async function main() {
   await seedRegions();
   await seedLocations();
   await seedAuthors();
+  await seedAdvancedGenres();
   await seedGenres();
   await seedBooks();
   // Optional file; seed if present

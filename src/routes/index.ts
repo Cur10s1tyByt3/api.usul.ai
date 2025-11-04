@@ -4,6 +4,7 @@ import bookRoutes from './book';
 import uptimeRoutes from './uptime.router';
 import authorRoutes from './author';
 import regionRoutes from './region';
+import advancedGenreRoutes from './advancedGenre';
 import genreRoutes from './genre';
 // import bullmqUIRoutes from './bullmq-ui.router';
 import { bearerAuth } from 'hono/bearer-auth';
@@ -14,6 +15,7 @@ import { getAuthorCount, populateAuthors } from '@/services/author';
 import { populateRegions } from '@/services/region';
 import { populateLocations } from '@/services/location';
 import { getBookCount, populateBooks } from '@/services/book';
+import { getAdvancedGenreCount, populateAdvancedGenres } from '@/services/advanced-genre';
 import { getGenreCount } from '@/services/genre';
 import { getRegionCount } from '@/services/region';
 import searchRoutes from './search';
@@ -28,6 +30,7 @@ routes.route('/', uptimeRoutes);
 routes.route('/book', bookRoutes);
 routes.route('/century', centuryRoutes);
 routes.route('/region', regionRoutes);
+routes.route('/advancedGenre', advancedGenreRoutes);
 routes.route('/genre', genreRoutes);
 routes.route('/author', authorRoutes);
 routes.route('/search', searchRoutes);
@@ -37,10 +40,11 @@ routes.route('/chat', chatRoutes);
 routes.route('/v1', v1Routes);
 
 routes.get('/total', async c => {
-  const [bookCount, authorCount, regionCount, genreCount] = await Promise.all([
+  const [bookCount, authorCount, regionCount, advancedGenreCount, genreCount] = await Promise.all([
     getBookCount(),
     getAuthorCount(),
     getRegionCount(),
+    getAdvancedGenreCount(),
     getGenreCount(),
   ]);
 
@@ -48,6 +52,7 @@ routes.get('/total', async c => {
     books: bookCount,
     authors: authorCount,
     regions: regionCount,
+    advancedGenres: advancedGenreCount,
     genres: genreCount,
   });
 });
@@ -57,6 +62,7 @@ routes.post('/reset-cache', bearerAuth({ token: env.DASHBOARD_PASSWORD }), async
   await populateAlternateSlugs();
   await populateLocations();
   await populateRegions();
+  await populateAdvancedGenres();
   await populateGenres();
   await populateAuthors();
   await populateBooks();

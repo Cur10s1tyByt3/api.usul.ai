@@ -33,6 +33,10 @@
       "description": "AI-powered chat and query functionality"
     },
     {
+      "name": "Advanced Genres",
+      "description": "Operations related to advanced genre taxonomy"
+    },
+    {
       "name": "Genres",
       "description": "Operations related to book genres and categories"
     },
@@ -587,6 +591,26 @@
         "tags": ["Search"],
         "summary": "Search genres",
         "description": "Search for genres with optional sorting",
+        "parameters": [
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
+          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "texts-asc", "texts-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
+          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GenreSearchResponse" } } }
+          }
+        }
+      }
+    },
+    "/search/advancedGenres": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Search advanced genres",
+        "description": "Search for advanced genres with optional sorting",
         "parameters": [
           { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
@@ -1238,6 +1262,133 @@
         }
       }
     },
+    "/advancedGenre/hierarchy": {
+      "get": {
+        "tags": ["Advanced Genres"],
+        "summary": "Get advanced genre hierarchy",
+        "description": "Retrieve curated top-level advanced genres with display metadata",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advanced genre hierarchy retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AdvancedGenreHierarchyItem" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/advancedGenre/": {
+      "get": {
+        "tags": ["Advanced Genres"],
+        "summary": "Get all advanced genres",
+        "description": "Get all advanced genres with optional filters",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          },
+          {
+            "name": "bookIds",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Comma-separated list of book IDs to filter by"
+          },
+          {
+            "name": "yearRange",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Comma-separated year range (e.g., '1000,1500')"
+          },
+          {
+            "name": "authorId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Author ID to filter by"
+          },
+          {
+            "name": "regionId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Region ID to filter by"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advanced genres retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AdvancedGenre" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/advancedGenre/count": {
+      "get": {
+        "tags": ["Advanced Genres"],
+        "summary": "Get advanced genre count",
+        "description": "Get the total number of advanced genres in the system",
+        "responses": {
+          "200": {
+            "description": "Advanced genre count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "total": { "type": "integer", "description": "Total number of advanced genres" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/advancedGenre/{slug}": {
+      "get": {
+        "tags": ["Advanced Genres"],
+        "summary": "Get advanced genre by slug",
+        "description": "Retrieve advanced genre information using its slug",
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" }, "description": "The slug of the advanced genre" },
+          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advanced genre retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdvancedGenre" } } }
+          },
+          "404": {
+            "description": "Advanced genre not found",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
     "/total": {
       "get": {
         "tags": ["System"],
@@ -1308,6 +1459,29 @@
   },
   "components": {
     "schemas": {
+      "AdvancedGenre": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Unique identifier for the advanced genre" },
+          "slug": { "type": "string", "description": "URL-friendly identifier" },
+          "name": { "type": "string", "description": "Primary display name" },
+          "secondaryName": { "type": "string", "description": "Secondary display name" },
+          "numberOfBooks": { "type": "integer", "description": "Associated books count (if available)" }
+        },
+        "required": ["id", "slug", "name"]
+      },
+      "AdvancedGenreHierarchyItem": {
+        "allOf": [
+          { "$ref": "#/components/schemas/AdvancedGenre" },
+          {
+            "type": "object",
+            "properties": {
+              "color": { "type": "string", "description": "UI color hint" },
+              "pattern": { "type": "integer", "description": "UI pattern identifier" }
+            }
+          }
+        ]
+      },
       "Book": {
         "type": "object",
         "properties": {
