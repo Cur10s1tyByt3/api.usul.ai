@@ -4,6 +4,7 @@ import {
   getAdvancedGenreById,
   getAdvancedGenreBySlug,
   getAdvancedGenreCount,
+  getAdvancedGenresHierarchy,
 } from '@/services/advanced-genre';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -12,28 +13,12 @@ import { z } from 'zod';
 
 const advancedGenreRoutes = new Hono();
 
-const hierarchyAdvancedGenres = [
-  {
-    id: 'quranic-sciences',
-    color: 'gray',
-    pattern: 1,
-  },
-  {
-    id: 'hadith',
-    color: 'red',
-    pattern: 2,
-  },
-];
-
-advancedGenreRoutes.get('/hierarchy', localeQueryValidator, c => {
+advancedGenreRoutes.get('/hierarchy', localeQueryValidator, async c => {
   const { locale } = c.req.valid('query');
 
-  const genres = hierarchyAdvancedGenres.map(genre => ({
-    ...genre,
-    ...(getAdvancedGenreById(genre.id, locale) ?? {}),
-  }));
+  const hierarchy = await getAdvancedGenresHierarchy(locale);
 
-  return c.json(genres);
+  return c.json(hierarchy);
 });
 
 advancedGenreRoutes.get(

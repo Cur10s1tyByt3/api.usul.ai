@@ -2,6 +2,7 @@ import { makeGenreDto } from '@/dto/advancedGenre.dto';
 import { env } from '@/env';
 import { db } from '@/lib/db';
 import { PathLocale } from '@/lib/locale';
+import { getPrimaryLocalizedText } from '@/lib/localization';
 import fs from 'fs';
 import path from 'path';
 import { getAllBooks } from './book';
@@ -62,6 +63,63 @@ export const getAdvancedGenreCount = async () => {
   return db.genre.count();
 };
 
+// TODO: Refactoring
+export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
+  const genres = await db.advancedGenre.findMany({
+    select: {
+      id: true,
+      slug: true,
+      transliteration: true,
+      parentGenre: true,
+      nameTranslations: true,
+    },
+  });
+
+  type TreeNode = {
+    id: string;
+    slug: string;
+    name: string;
+    children?: TreeNode[];
+  };
+
+  const idToNode = new Map<string, TreeNode>();
+
+  for (const g of genres) {
+    const localizedName = getPrimaryLocalizedText(
+      g.nameTranslations as any,
+      locale,
+    ) as string | undefined;
+    idToNode.set(g.id, {
+      id: g.id,
+      slug: g.slug,
+      name: localizedName || g.transliteration || g.slug,
+    });
+  }
+
+  const roots: TreeNode[] = [];
+
+  for (const g of genres) {
+    const node = idToNode.get(g.id)!;
+    const parentId = g.parentGenre ?? null;
+
+    if (!parentId) {
+      roots.push(node);
+      continue;
+    }
+
+    const parent = idToNode.get(parentId);
+    if (!parent) {
+      roots.push(node);
+      continue;
+    }
+
+    if (!parent.children) parent.children = [];
+    parent.children.push(node);
+  }
+
+  return roots;
+}
+
 const get = () =>
   db.advancedGenre.findMany({
     include: {
@@ -100,7 +158,3 @@ export const populateAdvancedGenres = async () => {
     genreSlugToGenre[genre.slug] = genre;
   }
 };
-
-export const populateAdvancedGenresHierarchy = async () => {
-  //TODO: Build advancedGenres hierarchy
-}
