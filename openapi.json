@@ -378,6 +378,65 @@
         }
       }
     },
+    "/search/": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Global search",
+        "description": "Search across books, authors, and genres with content search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Global search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalSearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/all": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "All-documents search",
+        "description": "Search across all documents (authors, books, genres) with pagination",
+        "parameters": [
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
+          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AllSearchResponse" } } }
+          }
+        }
+      }
+    },
     "/search/books": {
       "get": {
         "tags": ["Search"],
@@ -502,99 +561,89 @@
         "summary": "Search authors",
         "description": "Search for authors with various filters",
         "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Search query"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            },
-            "description": "Number of results to return"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            },
-            "description": "Page number for pagination"
-          },
-          {
-            "name": "locale",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": ["en", "ar"]
-            },
-            "description": "Locale for localized content"
-          }
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
+          { "name": "regions", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated list of region IDs to filter by" },
+          { "name": "yearRange", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated year range (e.g., '1000,1500')" },
+          { "name": "ids", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated list of author IDs to filter by" },
+          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "year-asc", "year-desc", "texts-asc", "texts-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
+          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
         ],
         "responses": {
           "200": {
             "description": "Search results retrieved successfully",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorSearchResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/AuthorSearchResponse" }
               }
             }
           }
         }
       }
     },
-    "/search/": {
+    "/search/genres": {
       "get": {
         "tags": ["Search"],
-        "summary": "Global search",
-        "description": "Search across books, authors, and genres with content search",
+        "summary": "Search genres",
+        "description": "Search for genres with optional sorting",
         "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Search query"
-          },
-          {
-            "name": "locale",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": ["en", "ar"]
-            },
-            "description": "Locale for localized content"
-          }
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
+          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "texts-asc", "texts-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
+          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
         ],
         "responses": {
           "200": {
-            "description": "Global search results retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GlobalSearchResponse"
-                }
-              }
-            }
+            "description": "Search results retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GenreSearchResponse" } } }
+          }
+        }
+      }
+    },
+    "/search/regions": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Search regions",
+        "description": "Search for regions with optional sorting",
+        "parameters": [
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
+          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "texts-asc", "texts-desc", "authors-asc", "authors-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
+          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegionSearchResponse" } } }
+          }
+        }
+      }
+    },
+    "/search/content": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Search within a specific book version",
+        "description": "Perform semantic or keyword search within a book version",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Search query" },
+          { "name": "bookId", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Book ID to search within" },
+          { "name": "versionId", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Book version ID to search within" },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["semantic", "keyword"], "default": "semantic" }, "description": "Search type" },
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }, "description": "Number of results per page" },
+          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content search results retrieved successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContentSearchResponse" } } }
+          },
+          "400": {
+            "description": "Bad request - invalid book or version",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
         }
       }
@@ -1642,6 +1691,82 @@
           }
         },
         "required": ["content", "books", "authors", "genres"]
+      },
+      "GenreSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "hits": { "type": "array", "items": { "$ref": "#/components/schemas/Genre" } },
+              "found": { "type": "integer" }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": { "type": "integer" },
+              "perPage": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          }
+        },
+        "required": ["results", "pagination"]
+      },
+      "RegionSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "hits": { "type": "array", "items": { "$ref": "#/components/schemas/Region" } },
+              "found": { "type": "integer" }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": { "type": "integer" },
+              "perPage": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          }
+        },
+        "required": ["results", "pagination"]
+      },
+      "AllSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "hits": { "type": "array", "items": { "type": "object", "description": "Search result document (book, author, or genre)" } },
+              "found": { "type": "integer" }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": { "type": "integer" },
+              "perPage": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          }
+        },
+        "required": ["results", "pagination"]
+      },
+      "ContentSearchResponse": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" },
+          "perPage": { "type": "integer" },
+          "currentPage": { "type": "integer" },
+          "hasNextPage": { "type": "boolean" },
+          "hasPreviousPage": { "type": "boolean" },
+          "results": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["total", "totalPages", "perPage", "currentPage", "results"]
       },
       "ErrorResponse": {
         "type": "object",
