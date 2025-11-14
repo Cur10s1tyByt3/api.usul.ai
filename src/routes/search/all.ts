@@ -5,12 +5,15 @@ import {
   formatAuthor,
   formatBook,
   formatGenre,
+  formatAdvancedGenre,
   formatResults,
   prepareQuery,
   weightsMapToQueryWeights,
 } from './utils';
 import { typesense } from '@/lib/typesense';
 import {
+  ADVANCED_GENRES_COLLECTION,
+  advancedGenresQueryWeights,
   authorQueryWeights,
   AUTHORS_COLLECTION,
   BOOKS_COLLECTION,
@@ -21,6 +24,7 @@ import {
 import { TypesenseAuthorDocument } from '@/types/typesense/author';
 import { TypesenseBookDocument } from '@/types/typesense/book';
 import { TypesenseGenreDocument } from '@/types/typesense/genre';
+import { TypesenseAdvancedGenreDocument } from '@/types/typesense/advanced-genre';
 import { searchBook } from '@/book-search/search';
 import { getBookById } from '@/services/book';
 
@@ -34,7 +38,7 @@ globalSearchRoutes.get(
 
     const [typesenseResults, keywordResults] = await Promise.all([
       typesense.multiSearch.perform<
-        [TypesenseAuthorDocument, TypesenseBookDocument, TypesenseGenreDocument]
+        [TypesenseAuthorDocument, TypesenseBookDocument, TypesenseGenreDocument, TypesenseAdvancedGenreDocument]
       >({
         searches: [
           {
@@ -64,6 +68,15 @@ globalSearchRoutes.get(
             limit: 5,
             page: 1,
           },
+          {
+            collection: ADVANCED_GENRES_COLLECTION.INDEX,
+            q: prepareQuery(q),
+            query_by: Object.values(advancedGenresQueryWeights).flat(),
+            query_by_weights: weightsMapToQueryWeights(advancedGenresQueryWeights),
+            prioritize_token_position: true,
+            limit: 5,
+            page: 1,
+          }
         ],
       }),
       searchBook({
@@ -78,6 +91,7 @@ globalSearchRoutes.get(
     const authors = typesenseResults.results[0];
     const books = typesenseResults.results[1];
     const genres = typesenseResults.results[2];
+    const advancedGenre = typesenseResults.results[3];
 
     return c.json({
       content: {
@@ -113,6 +127,7 @@ globalSearchRoutes.get(
       books: formatResults(books, 'book', book => formatBook(book, locale)),
       authors: formatResults(authors, 'author', author => formatAuthor(author, locale)),
       genres: formatResults(genres, 'genre', genre => formatGenre(genre, locale)),
+      advancedGenres: formatResults(advancedGenre, 'advancedGenre', advancedGenre => formatAdvancedGenre(advancedGenre, locale)),
     });
   },
 );

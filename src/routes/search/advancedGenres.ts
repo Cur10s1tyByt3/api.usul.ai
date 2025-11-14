@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import {
   commonSearchSchema,
-  formatGenre,
+  formatAdvancedGenre,
   formatPagination,
   formatResults,
   prepareQuery,
@@ -56,7 +56,7 @@ advancedGenresSearchRoutes.get(
       });
 
     return c.json({
-      results: formatResults(results, 'genre', genre => formatGenre(genre, locale)),
+      results: formatResults(results, 'advancedGenre', genre => formatAdvancedGenre(genre, locale)),
       pagination: formatPagination(results.found, results.page, limit),
     });
   },

@@ -2,7 +2,6 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import {
   commonSearchSchema,
-  formatGenre,
   formatPagination,
   formatRegion,
   formatResults,

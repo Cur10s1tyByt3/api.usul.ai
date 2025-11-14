@@ -4,6 +4,7 @@ import { getPrimaryLocalizedText, getSecondaryLocalizedText } from '@/lib/locali
 import { TypesenseAuthorDocument } from '@/types/typesense/author';
 import { TypesenseBookDocument } from '@/types/typesense/book';
 import { TypesenseGenreDocument } from '@/types/typesense/genre';
+import { TypesenseAdvancedGenreDocument } from '@/types/typesense/advanced-genre';
 import { TypesenseGlobalSearchDocument } from '@/types/typesense/global-search-document';
 import { TypesenseRegionDocument } from '@/types/typesense/region';
 import { localeSchema } from '@/validators/locale';
@@ -118,6 +119,19 @@ export const formatBook = (book: TypesenseBookDocument, locale: PathLocale) => {
   };
 };
 
+export const formatAdvancedGenre = (genre: TypesenseAdvancedGenreDocument, locale: PathLocale) => {
+  const name = getPrimaryLocalizedText(genre.nameTranslations, locale);
+  return {
+    ...genre,
+    transliteration: undefined,
+    _popularity: undefined,
+
+    nameTranslations: undefined,
+    primaryName: name,
+    secondaryName: getSecondaryLocalizedText(genre.nameTranslations, locale),
+  };
+}
+
 export const formatGenre = (genre: TypesenseGenreDocument, locale: PathLocale) => {
   const name = getPrimaryLocalizedText(genre.nameTranslations, locale);
   return {
@@ -130,6 +144,7 @@ export const formatGenre = (genre: TypesenseGenreDocument, locale: PathLocale) =
     secondaryName: getSecondaryLocalizedText(genre.nameTranslations, locale),
   };
 };
+
 
 export const formatRegion = (region: TypesenseRegionDocument, locale: PathLocale) => {
   const name = getPrimaryLocalizedText(region.names, locale);

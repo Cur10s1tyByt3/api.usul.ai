@@ -480,6 +480,15 @@
             "description": "Page number for pagination"
           },
           {
+            "name": "advancedGenres",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of advanced genre IDs to filter by"
+          },
+          {
             "name": "genres",
             "in": "query",
             "required": false,

@@ -24,6 +24,11 @@ bookSearchRoutes.get(
   zValidator(
     'query',
     commonSearchSchema.extend({
+      advancedGenres: z
+        .string()
+        .transform(val => val.split(','))
+        .pipe(z.array(z.string()))
+        .optional(),
       genres: z
         .string()
         .transform(val => val.split(','))
@@ -61,11 +66,14 @@ bookSearchRoutes.get(
     }),
   ),
   async c => {
-    const { q, limit, page, sortBy, genres, authors, regions, yearRange, ids, locale } =
+    const { q, limit, page, sortBy, advancedGenres, genres, authors, regions, yearRange, ids, locale } =
       c.req.valid('query');
 
     const filters: string[] = [];
 
+    if (advancedGenres && advancedGenres.length > 0) {
+      filters.push(`advancedGenreIds:[${advancedGenres.map(genre => `\`${genre}\``).join(', ')}]`);
+    }
     if (genres && genres.length > 0) {
       filters.push(`genreIds:[${genres.map(genre => `\`${genre}\``).join(', ')}]`);
     }

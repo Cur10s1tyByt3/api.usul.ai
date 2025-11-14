@@ -15,6 +15,7 @@ export type TypesenseBookDocument = {
   versions: PrismaJson.BookVersion[];
   coverUrl?: string;
   genreIds: string[];
+  advancedGenreIds?: string[];
   // these are derived from the author
   author: {
     id: string;

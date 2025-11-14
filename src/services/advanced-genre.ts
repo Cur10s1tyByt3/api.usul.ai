@@ -71,6 +71,7 @@ export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
       slug: true,
       transliteration: true,
       parentGenre: true,
+      numberOfBooks: true,
       nameTranslations: true,
     },
   });
@@ -79,6 +80,7 @@ export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
     id: string;
     slug: string;
     name: string;
+    numberOfBooks: number;
     children?: TreeNode[];
   };
 
@@ -93,6 +95,7 @@ export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
       id: g.id,
       slug: g.slug,
       name: localizedName || g.transliteration || g.slug,
+      numberOfBooks: g.numberOfBooks,
     });
   }
 
