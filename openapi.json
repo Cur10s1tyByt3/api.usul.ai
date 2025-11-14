@@ -894,7 +894,7 @@
         }
       }
     },
-    "/genre/": {
+    "/genre": {
       "get": {
         "tags": ["Genres"],
         "summary": "Get all genres",
@@ -1300,7 +1300,7 @@
         }
       }
     },
-    "/advancedGenre/": {
+    "/advancedGenre": {
       "get": {
         "tags": ["Advanced Genres"],
         "summary": "Get all advanced genres",
