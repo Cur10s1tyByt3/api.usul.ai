@@ -40,9 +40,9 @@ advancedGenreRoutes.get(
       regionId: z.string().optional(),
     }),
   ),
-  c => {
+  async c => {
     const { locale, bookIds, yearRange, authorId, regionId } = c.req.valid('query');
-    const genres = getAllAdvancedGenres(locale, { bookIds, yearRange, authorId, regionId });
+    const genres = await getAllAdvancedGenres(locale, { bookIds, yearRange, authorId, regionId });
 
     return c.json(genres);
   },
@@ -57,11 +57,11 @@ advancedGenreRoutes.get(
   '/:slug',
   zValidator('param', z.object({ slug: z.string() })),
   localeQueryValidator,
-  c => {
+  async c => {
     const { slug } = c.req.valid('param');
     const { locale } = c.req.valid('query');
 
-    const genre = getAdvancedGenreBySlug(slug, locale);
+    const genre = await getAdvancedGenreBySlug(slug, locale);
     if (!genre) {
       throw new HTTPException(404, { message: 'Genre not found' });
     }

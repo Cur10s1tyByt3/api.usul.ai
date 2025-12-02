@@ -16,6 +16,7 @@ import { TypesenseBookDocument } from '@/types/typesense/book';
 import { TypesenseAuthorDocument } from '@/types/typesense/author';
 import { SearchResponse } from 'typesense/lib/Typesense/Documents';
 import { BOOKS_COLLECTION, booksQueryWeights } from '@/lib/typesense/collections';
+import { getGenreIdsWithDescendants } from '@/services/advanced-genre';
 
 const bookSearchRoutes = new Hono();
 
@@ -72,7 +73,10 @@ bookSearchRoutes.get(
     const filters: string[] = [];
 
     if (advancedGenres && advancedGenres.length > 0) {
-      filters.push(`advancedGenreIds:[${advancedGenres.map(genre => `\`${genre}\``).join(', ')}]`);
+      // Expand advancedGenres to include all descendant genres (children, grandchildren, etc.)
+      // This ensures that when a parent genre is searched, books from all child genres are included
+      const expandedGenreIds = await getGenreIdsWithDescendants(advancedGenres);
+      filters.push(`advancedGenreIds:[${expandedGenreIds.map(genre => `\`${genre}\``).join(', ')}]`);
     }
     if (genres && genres.length > 0) {
       filters.push(`genreIds:[${genres.map(genre => `\`${genre}\``).join(', ')}]`);
