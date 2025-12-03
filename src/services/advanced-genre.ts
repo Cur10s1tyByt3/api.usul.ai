@@ -2,7 +2,7 @@ import { makeGenreDto } from '@/dto/advancedGenre.dto';
 import { env } from '@/env';
 import { db } from '@/lib/db';
 import { PathLocale } from '@/lib/locale';
-import { getPrimaryLocalizedText } from '@/lib/localization';
+import { getPrimaryLocalizedText, getSecondaryLocalizedText } from '@/lib/localization';
 import fs from 'fs';
 import path from 'path';
 import { getAllBooks } from './book';
@@ -359,7 +359,8 @@ export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
   type TreeNode = {
     id: string;
     slug: string;
-    name: string;
+    primaryName: string;
+    secondaryName?: string;
     numberOfBooks: number;
     children?: TreeNode[];
   };
@@ -367,14 +368,19 @@ export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
   const idToNode = new Map<string, TreeNode>();
 
   for (const g of genres) {
-    const localizedName = getPrimaryLocalizedText(
+    const primaryName = getPrimaryLocalizedText(
+      g.nameTranslations as any,
+      locale,
+    ) as string | undefined;
+    const secondaryName = getSecondaryLocalizedText(
       g.nameTranslations as any,
       locale,
     ) as string | undefined;
     idToNode.set(g.id, {
       id: g.id,
       slug: g.slug,
-      name: localizedName || g.transliteration || g.slug,
+      primaryName: primaryName || g.transliteration || g.slug,
+      secondaryName:  secondaryName,
       numberOfBooks: aggregatedCounts.get(g.id) || 0,
     });
   }
