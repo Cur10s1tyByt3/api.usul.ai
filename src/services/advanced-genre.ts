@@ -144,7 +144,7 @@ let cachedAggregatedCounts: Map<string, number> | null = null;
  * Calculates aggregated counts for all genres by aggregating child genres to parents
  * Returns a map of genre ID to aggregated book count
  */
-const calculateAggregatedCounts = async (params?: {
+export const calculateAggregatedCounts = async (params?: {
   authorId?: string;
   bookIds?: string[];
   yearRange?: [number, number];
@@ -163,7 +163,9 @@ const calculateAggregatedCounts = async (params?: {
   }
 
   // Get all books with their advancedGenres
-  const books = await db.book.findMany({
+  let books;
+  try {
+    books = await db.book.findMany({
     where: params
       ? {
           ...(params.authorId && { authorId: params.authorId }),
@@ -196,6 +198,25 @@ const calculateAggregatedCounts = async (params?: {
       },
     },
   });
+  } catch (error: any) {
+    // Handle database connection errors gracefully
+    // If we have cached counts, return them; otherwise return empty counts
+    if (error?.code === 'P1001' || error?.code === 'P1000') {
+      console.warn('Database connection error, using cached data or returning empty counts:', error.message);
+      if (cachedAggregatedCounts) {
+        return new Map(cachedAggregatedCounts);
+      }
+      // Return empty map if no cache available
+      const emptyCounts = new Map<string, number>();
+      const genres = Object.values(genreIdToGenre ?? {});
+      for (const genre of genres) {
+        emptyCounts.set(genre.id, 0);
+      }
+      return emptyCounts;
+    }
+    // Re-throw other errors
+    throw error;
+  }
 
   // Build genre to books map (including direct associations)
   const genreToBooks = new Map<string, Set<string>>();

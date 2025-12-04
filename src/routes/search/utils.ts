@@ -119,16 +119,23 @@ export const formatBook = (book: TypesenseBookDocument, locale: PathLocale) => {
   };
 };
 
-export const formatAdvancedGenre = (genre: TypesenseAdvancedGenreDocument, locale: PathLocale) => {
+export const formatAdvancedGenre = (
+  genre: TypesenseAdvancedGenreDocument,
+  locale: PathLocale,
+  numberOfBooks?: number,
+) => {
   const name = getPrimaryLocalizedText(genre.nameTranslations, locale);
+  const { booksCount, ...rest } = genre;
+  
   return {
-    ...genre,
+    ...rest,
     transliteration: undefined,
     _popularity: undefined,
 
     nameTranslations: undefined,
     primaryName: name,
     secondaryName: getSecondaryLocalizedText(genre.nameTranslations, locale),
+    booksCount: numberOfBooks ?? booksCount,
   };
 }
 

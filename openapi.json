@@ -1300,6 +1300,35 @@
         }
       }
     },
+    "/advancedGenre/homepage": {
+      "get": {
+        "tags": ["Advanced Genres"],
+        "summary": "Get homepage advanced genres",
+        "description": "Get featured advanced genres for homepage display with color and pattern metadata",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Homepage advanced genres retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AdvancedGenreHierarchyItem" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/advancedGenre": {
       "get": {
         "tags": ["Advanced Genres"],

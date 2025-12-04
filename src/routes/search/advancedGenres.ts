@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { typesense } from '@/lib/typesense';
 import { TypesenseAdvancedGenreDocument } from '@/types/typesense/advanced-genre';
 import { ADVANCED_GENRES_COLLECTION, advancedGenresQueryWeights } from '@/lib/typesense/collections';
+import { calculateAggregatedCounts } from '@/services/advanced-genre';
 
 const advancedGenresSearchRoutes = new Hono();
 
@@ -55,8 +56,13 @@ advancedGenresSearchRoutes.get(
         }),
       });
 
+    // Get aggregated counts (includes child genres)
+    const aggregatedCounts = await calculateAggregatedCounts();
+
     return c.json({
-      results: formatResults(results, 'advancedGenre', genre => formatAdvancedGenre(genre, locale)),
+      results: formatResults(results, 'advancedGenre', genre =>
+        formatAdvancedGenre(genre, locale, aggregatedCounts.get(genre.id)),
+      ),
       pagination: formatPagination(results.found, results.page, limit),
     });
   },

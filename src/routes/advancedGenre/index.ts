@@ -13,6 +13,93 @@ import { z } from 'zod';
 
 const advancedGenreRoutes = new Hono();
 
+const homepageAdvancedGenres = [
+  {
+    id: 'prophetic-biography',
+    color: 'yellow',
+    pattern: 1,
+  },
+  {
+    id: 'spiritual-reflections-and-etiquettes-with-remembrances-and-purification',
+    color: 'red',
+    pattern: 2,
+  },
+  {
+    id: 'hadith-and-its-sciences',
+    color: 'green',
+    pattern: 3,
+  },
+  {
+    id: 'doctrines-and-sects',
+    color: 'gray',
+    pattern: 5,
+  },
+  {
+    id: 'jurisprudence-and-its-principles',
+    color: 'indigo',
+    pattern: 4,
+  },
+  {
+    id: 'quranic-sciences-and-exegesis',
+    color: 'green',
+    pattern: 7,
+  },
+  {
+    id: 'philosophy-and-logic',
+    color: 'gray',
+    pattern: 9,
+  },
+  {
+    id: 'islamic-banking',
+    color: 'yellow',
+    pattern: 1,
+  },
+  {
+    id: 'the-other-sciences',
+    color: 'red',
+    pattern: 2,
+  },
+  {
+    id: 'human-sciences',
+    color: 'green',
+    pattern: 3,
+  },
+  {
+    id: 'arabic-language',
+    color: 'indigo',
+    pattern: 5,
+  },
+  {
+    id: 'compilations-essays-and-various-studies',
+    color: 'yellow',
+    pattern: 4,
+  },
+  {
+    id: 'orientalism-and-orientalists',
+    color: 'gray',
+    pattern: 7,
+  },
+  {
+    id: 'biographies-and-classes-and-virtues',
+    color: 'indigo',
+    pattern: 9,
+  },
+];
+
+advancedGenreRoutes.get('/homepage', localeQueryValidator, async c => {
+  const { locale } = c.req.valid('query');
+
+  const genres = await Promise.all(
+    homepageAdvancedGenres.map(async genre => ({
+      ...genre,
+      ...((await getAdvancedGenreById(genre.id, locale)) ?? {}),
+    }))
+  );
+
+  return c.json(genres);
+});
+
+
 advancedGenreRoutes.get('/hierarchy', localeQueryValidator, async c => {
   const { locale } = c.req.valid('query');
 
