@@ -1241,8 +1241,265 @@
       "get": {
         "tags": ["Collections"],
         "summary": "Get all collections",
-        "description": "Get all book collections",
+        "description": "Get all collections for the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Collections retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Collection"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Collections"],
+        "summary": "Create a collection",
+        "description": "Create a new book collection",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Name of the collection"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Description of the collection"
+                  },
+                  "slug": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "minLength": 1,
+                    "description": "URL-friendly slug (lowercase alphanumeric with hyphens)"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": ["PUBLIC", "UNLISTED"],
+                    "description": "Visibility of the collection"
+                  }
+                },
+                "required": ["name", "description", "slug", "visibility"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Collection created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Collection"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - collection with this slug already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to create collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/check-slug": {
+      "post": {
+        "tags": ["Collections"],
+        "summary": "Check if slug exists",
+        "description": "Check if a collection slug is already taken",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "description": "Slug to check"
+                  }
+                },
+                "required": ["slug"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Slug check completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exists": {
+                      "type": "boolean",
+                      "description": "Whether the slug already exists"
+                    }
+                  },
+                  "required": ["exists"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/by-slug/{slug}": {
+      "get": {
+        "tags": ["Collections"],
+        "summary": "Get collection by slug",
+        "description": "Retrieve a collection by its slug with searchable book results",
         "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug of the collection"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "genres",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of genre IDs to filter by"
+          },
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of author IDs to filter by"
+          },
+          {
+            "name": "regions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of region IDs to filter by"
+          },
+          {
+            "name": "yearRange",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated year range (e.g., '1000,1500')"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["relevance", "year-asc", "year-desc", "alphabetical-asc", "alphabetical-desc"]
+            },
+            "description": "Sort order for results"
+          },
           {
             "name": "locale",
             "in": "query",
@@ -1256,14 +1513,392 @@
         ],
         "responses": {
           "200": {
-            "description": "Collections retrieved successfully",
+            "description": "Collection retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Collection"
+                  "$ref": "#/components/schemas/CollectionBySlugResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/{id}": {
+      "put": {
+        "tags": ["Collections"],
+        "summary": "Update a collection",
+        "description": "Update an existing collection",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the collection"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Name of the collection"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Description of the collection"
+                  },
+                  "slug": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "minLength": 1,
+                    "description": "URL-friendly slug (lowercase alphanumeric with hyphens)"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": ["PUBLIC", "UNLISTED"],
+                    "description": "Visibility of the collection"
                   }
+                },
+                "required": ["name", "description", "slug", "visibility"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Collection updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Collection"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Collections"],
+        "summary": "Delete a collection",
+        "description": "Delete an existing collection",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the collection"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Collection"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/{id}/add-books": {
+      "post": {
+        "tags": ["Collections"],
+        "summary": "Add multiple books to collection",
+        "description": "Add multiple books to a collection",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the collection"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "description": "Array of book IDs to add"
+                  }
+                },
+                "required": ["bookIds"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Books added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Collection"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/{id}/add-book": {
+      "post": {
+        "tags": ["Collections"],
+        "summary": "Add book to collection",
+        "description": "Add a single book to a collection",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the collection"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookId": {
+                    "type": "string",
+                    "description": "ID of the book to add"
+                  }
+                },
+                "required": ["bookId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Book added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Collection"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collections/{id}/remove-book": {
+      "post": {
+        "tags": ["Collections"],
+        "summary": "Remove book from collection",
+        "description": "Remove a book from a collection",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the collection"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookId": {
+                    "type": "string",
+                    "description": "ID of the book to remove"
+                  }
+                },
+                "required": ["bookId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Book removed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Collection"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1689,14 +2324,136 @@
             "type": "string",
             "description": "Description of the collection"
           },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly slug identifier"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": ["PUBLIC", "UNLISTED"],
+            "description": "Visibility of the collection"
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID of the user who owns the collection"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          },
           "books": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Book"
-            }
+            },
+            "description": "Books in the collection"
           }
         },
-        "required": ["id", "name"]
+        "required": ["id", "name", "slug", "visibility", "userId"]
+      },
+      "CollectionBySlugResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the collection"
+              },
+              "name": {
+                "type": "string",
+                "description": "Name of the collection"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of the collection"
+              },
+              "slug": {
+                "type": "string",
+                "description": "URL-friendly slug identifier"
+              },
+              "visibility": {
+                "type": "string",
+                "enum": ["PUBLIC", "UNLISTED"],
+                "description": "Visibility of the collection"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Creation timestamp"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Last update timestamp"
+              },
+              "isOwner": {
+                "type": "boolean",
+                "description": "Whether the authenticated user owns this collection"
+              },
+              "totalBooks": {
+                "type": "integer",
+                "description": "Total number of books in the collection"
+              }
+            },
+            "required": ["id", "name", "slug", "visibility"]
+          },
+          "results": {
+            "type": "object",
+            "properties": {
+              "found": {
+                "type": "integer",
+                "description": "Total number of results found"
+              },
+              "page": {
+                "type": "integer",
+                "description": "Current page number"
+              },
+              "hits": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Book"
+                },
+                "description": "Array of book results"
+              }
+            },
+            "required": ["found", "page", "hits"]
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "totalRecords": {
+                "type": "integer",
+                "description": "Total number of records"
+              },
+              "totalPages": {
+                "type": "integer",
+                "description": "Total number of pages"
+              },
+              "currentPage": {
+                "type": "integer",
+                "description": "Current page number"
+              },
+              "hasPrev": {
+                "type": "boolean",
+                "description": "Whether there is a previous page"
+              },
+              "hasNext": {
+                "type": "boolean",
+                "description": "Whether there is a next page"
+              }
+            },
+            "required": ["totalRecords", "totalPages", "currentPage", "hasPrev", "hasNext"]
+          }
+        },
+        "required": ["data", "results", "pagination"]
       },
       "BookDetailsResponse": {
         "type": "object",
@@ -1993,6 +2750,14 @@
           }
         },
         "required": ["status", "message"]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token authentication"
       }
     }
   }

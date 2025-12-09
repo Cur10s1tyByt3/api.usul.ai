@@ -168,13 +168,13 @@ collectionsRoutes.get(
           ...(filters.length > 0 && { filter_by: filters.join(' && ') }),
           ...(sortBy && sortBy !== 'relevance'
             ? {
-                sort_by: {
-                  'year-asc': 'year:asc',
-                  'year-desc': 'year:desc',
-                  'alphabetical-asc': 'transliteration:asc',
-                  'alphabetical-desc': 'transliteration:desc',
-                }[sortBy],
-              }
+              sort_by: {
+                'year-asc': 'year:asc',
+                'year-desc': 'year:desc',
+                'alphabetical-asc': 'transliteration:asc',
+                'alphabetical-desc': 'transliteration:desc',
+              }[sortBy],
+            }
             : {}),
         },
         // ...(authors && authors.length > 0
@@ -292,6 +292,44 @@ collectionsRoutes.put(
         description,
         slug,
         visibility,
+      },
+    });
+
+    if (!collection) {
+      throw new HTTPException(404, { message: 'Collection not found' });
+    }
+
+    // invalidate cache
+    collectionCache.delete(collection.slug);
+
+    return c.json({ data: collection });
+  },
+);
+
+// add multiple books to collection
+collectionsRoutes.post(
+  '/:id/add-books',
+  requireAuth,
+  zValidator(
+    'json',
+    z.object({
+      bookIds: z.array(z.string()).min(1),
+    }),
+  ),
+  async c => {
+    const { user } = c.var.session;
+    const id = c.req.param('id');
+    const { bookIds } = c.req.valid('json');
+
+    const collection = await db.collection.update({
+      where: {
+        id,
+        userId: user.id,
+      },
+      data: {
+        books: {
+          connect: bookIds.map(bookId => ({ id: bookId })),
+        },
       },
     });
 
