@@ -8,7 +8,8 @@ import { searchQueriesInParallel } from '@/book-search/search';
 import { answerMultiBookRagQuery } from '@/chat/rag';
 import { dataStreamToResponse } from '@/lib/stream';
 import { messagesSchema } from '@/validators/chat';
-import { getBookById, getBooksByAuthorId, getBooksByGenreId } from '@/services/book';
+import { getBookById, getBooksByAuthorId, getBooksByAdvancedGenreId } from '@/services/book';
+import { getGenreIdsWithDescendants } from '@/services/advanced-genre';
 import { BookDto } from '@/dto/book.dto';
 import { localeSchema } from '@/validators/locale';
 import { generateQueries } from '@/chat/generate-queries';
@@ -33,7 +34,7 @@ multiChatRoutes.post(
       isRetry: z.boolean().optional(),
       bookIds: z.array(z.string()).optional().default([]),
       authorIds: z.array(z.string()).optional().default([]),
-      genreIds: z.array(z.string()).optional().default([]),
+      advancedGenreIds: z.array(z.string()).optional().default([]),
       messages: messagesSchema,
       chatId: z.string().optional(),
     }),
@@ -62,11 +63,16 @@ multiChatRoutes.post(
       });
     }
 
-    if (body.genreIds.length > 0) {
-      body.genreIds.forEach(genreId => {
-        const books = getBooksByGenreId(genreId, locale);
-        books.forEach(book => resolvedBookIds.add(book.id));
-      });
+    if (body.advancedGenreIds.length > 0) {
+      // Expand advancedGenres to include all descendant genres (children, grandchildren, etc.)
+      // This ensures that when a parent genre is searched, books from all child genres are included
+      const expandedGenreIds = await getGenreIdsWithDescendants(body.advancedGenreIds);
+      for (const advancedGenreId of expandedGenreIds) {
+        const books = getBooksByAdvancedGenreId(advancedGenreId, locale);
+        for (const book of books) {
+          resolvedBookIds.add(book.id);
+        }
+      }
     }
 
     const books = [...resolvedBookIds]

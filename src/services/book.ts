@@ -35,6 +35,17 @@ export const getBooksByGenreId = (genreId: string, locale: PathLocale = 'en') =>
   return entries.map(book => makeBookDto(book, locale));
 };
 
+export const getBooksByAdvancedGenreId = (advancedGenreId: string, locale: PathLocale = 'en') => {
+  if (!advancedGenreIdToBooks) {
+    console.warn('advancedGenreIdToBooks is not initialized. Books may not be filtered correctly.');
+    return [];
+  }
+  const entries = advancedGenreIdToBooks[advancedGenreId];
+  if (!entries) return [];
+
+  return entries.map(book => makeBookDto(book, locale));
+};
+
 export const getBookCount = async () => {
   if (bookIdToBook) {
     return Object.keys(bookIdToBook).length;
@@ -128,6 +139,9 @@ const get = () =>
       genres: {
         select: { id: true },
       },
+      advancedGenres: {
+        select: { id: true },
+      },
       primaryNameTranslations: true,
       otherNameTranslations: true,
     },
@@ -139,6 +153,7 @@ let bookSlugToBook: Record<string, RawBook> | null = null;
 let bookIdToBook: Record<string, RawBook> | null = null;
 let authorIdToBooks: Record<string, RawBook[]> | null = null;
 let genreIdToBooks: Record<string, RawBook[]> | null = null;
+let advancedGenreIdToBooks: Record<string, RawBook[]> | null = null;
 
 export const populateBooks = async () => {
   let books: Awaited<ReturnType<typeof get>> | undefined;
@@ -163,6 +178,7 @@ export const populateBooks = async () => {
   bookIdToBook = {};
   authorIdToBooks = {};
   genreIdToBooks = {};
+  advancedGenreIdToBooks = {};
 
   for (const book of books) {
     bookSlugToBook[book.slug] = book;
@@ -171,6 +187,12 @@ export const populateBooks = async () => {
     authorIdToBooks[book.authorId] = [...(authorIdToBooks[book.authorId] ?? []), book];
     book.genres.forEach(genre => {
       genreIdToBooks![genre.id] = [...(genreIdToBooks![genre.id] ?? []), book];
+    });
+    book.advancedGenres?.forEach(advancedGenre => {
+      advancedGenreIdToBooks![advancedGenre.id] = [
+        ...(advancedGenreIdToBooks![advancedGenre.id] ?? []),
+        book,
+      ];
     });
   }
 };
