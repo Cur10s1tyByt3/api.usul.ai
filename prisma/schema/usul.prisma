@@ -16,6 +16,8 @@ model Author {
   primaryNameTranslations   AuthorPrimaryName[]
   books                     Book[]
   locations                 Location[]            @relation("AuthorToLocation")
+  regions                   Region[]              @relation("AuthorToRegion")
+  empires                   Empire[]              @relation("AuthorToEmpire")
 }
 
 model AuthorAlternateSlug {
@@ -203,6 +205,8 @@ model Region {
   currentNameTranslations    RegionCurrentName[]
   nameTranslations           RegionName[]
   overviewTranslations       RegionOverview[]
+  author                     Author[]            @relation("AuthorToRegion")
+  empire                     Empire[]            @relation("RegionToEmpire")
 }
 
 model RegionCurrentName {
@@ -230,6 +234,37 @@ model RegionOverview {
   region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
 
   @@id([regionId, locale])
+}
+
+model Empire {
+  id                   String           @id
+  slug                 String           @unique
+  numberOfAuthors      Int              @default(0)
+  numberOfBooks        Int              @default(0)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime?        @updatedAt
+  nameTranslations     EmpireName[]
+  overviewTranslations EmpireOverview[]
+  author               Author[]         @relation("AuthorToEmpire")
+  region               Region[]         @relation("RegionToEmpire")
+}
+
+model EmpireName {
+  locale   String
+  text     String
+  empireId String
+  empire   Empire @relation(fields: [empireId], references: [id], onDelete: Cascade)
+
+  @@id([empireId, locale])
+}
+
+model EmpireOverview {
+  locale   String
+  text     String
+  empireId String
+  empire   Empire @relation(fields: [empireId], references: [id], onDelete: Cascade)
+
+  @@id([empireId, locale])
 }
 
 enum AuthorYearStatus {
