@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { genresAirtable } from '../util/airtable';
-import { translateAndTransliterateName } from './openai';
+import { translateAndTransliterateName } from '../util/openai';
 import slugify from 'slugify';
 import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
@@ -15,6 +15,19 @@ const getAirtableAdvancedGenres = async () => {
       _airtableReference: g.id,
       name,
       simpleGenreId: simpleGenreId[0] ?? null,
+    };
+  });
+};
+
+const getAirtableAdvancedGenreHierarchy = async () => {
+  const records = await genresAirtable('Advanced Genres Hierarchy').select().all();
+
+  return records.map(r => {
+    const f = r.fields;
+    return {
+      _airtableReference: r.id,
+      childAirtableId: Array.isArray(f['Child Genre']) ? f['Child Genre'][0] : null,
+      parentAirtableId: Array.isArray(f['Parent Genre']) ? f['Parent Genre'][0] : null,
     };
   });
 };
@@ -238,3 +251,73 @@ if (deletedGenres.length > 0) {
     }
   }
 }
+
+// Sync parent relationships
+console.log('\n=== Syncing Parent Relationships ===');
+const airtableRelations = await getAirtableAdvancedGenreHierarchy();
+
+const childToParentAirMap = new Map();
+for (const r of airtableRelations) {
+  if (r.childAirtableId) {
+    childToParentAirMap.set(r.childAirtableId, r.parentAirtableId ?? null);
+  }
+}
+
+// Refresh genres after creates/updates/deletes
+const allNeonGenres = await db.advancedGenre.findMany({
+  select: {
+    id: true,
+    extraProperties: true,
+  },
+});
+
+const airtableToNeonId = new Map();
+for (const g of allNeonGenres) {
+  const airtableRef = g.extraProperties?._airtableReference;
+  if (airtableRef) airtableToNeonId.set(airtableRef, g.id);
+}
+
+let parentUpdated = 0;
+for (const g of allNeonGenres) {
+  const childAirId = g.extraProperties?._airtableReference;
+  if (!childAirId) continue;
+
+  const parentAirId = childToParentAirMap.get(childAirId);
+  if (parentAirId === undefined) {
+    continue;
+  }
+
+  const parentNeonId = parentAirId ? airtableToNeonId.get(parentAirId) : null;
+
+  if (parentAirId && !parentNeonId) {
+    console.warn(
+      `Skipping set parent for ${g.id}: parent Airtable ${parentAirId} not found in Neon mappings`,
+    );
+    continue;
+  }
+
+  const current = await db.advancedGenre.findUnique({
+    where: { id: g.id },
+    select: { parentGenre: true },
+  });
+
+  const newParentValue = parentNeonId ?? null;
+  const curParentValue = current?.parentGenre ?? null;
+
+  if (curParentValue === newParentValue) {
+    continue;
+  }
+
+  try {
+    await db.advancedGenre.update({
+      where: { id: g.id },
+      data: { parentGenre: newParentValue },
+    });
+    parentUpdated++;
+    console.log(`Updated parentGenre for ${g.id} -> ${newParentValue ?? 'null'}`);
+  } catch (err) {
+    console.error(`Failed to update parentGenre for ${g.id}:`, err);
+  }
+}
+
+console.log(`\nDone. Updated ${parentUpdated} parent relationships.`);
