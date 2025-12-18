@@ -1039,7 +1039,7 @@
         }
       }
     },
-    "/region/": {
+    "/region": {
       "get": {
         "tags": ["Regions"],
         "summary": "Get all regions",
