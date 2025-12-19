@@ -44,6 +44,9 @@ const get = () =>
       locations: {
         select: { id: true },
       },
+      empires: {
+        select: { id: true },
+      },
     },
   });
 

@@ -5,6 +5,7 @@ import authorSearchRoutes from './authors';
 import advancedGenreRoutes from './advancedGenres';
 import genresSearchRoutes from './genres';
 import regionsSearchRoutes from './regions';
+import empireSearchRoutes from './empire';
 import allSearchRoutes from './all';
 import contentSearchRoutes from './content';
 
@@ -15,6 +16,7 @@ searchRoutes.route('/', bookSearchRoutes);
 searchRoutes.route('/', authorSearchRoutes);
 searchRoutes.route('/', advancedGenreRoutes);
 searchRoutes.route('/', genresSearchRoutes);
+searchRoutes.route('/', empireSearchRoutes);
 searchRoutes.route('/', regionsSearchRoutes);
 searchRoutes.route('/', globalSearchRoutes);
 searchRoutes.route('/', contentSearchRoutes);

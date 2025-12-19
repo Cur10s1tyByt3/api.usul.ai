@@ -87,6 +87,7 @@ export const getAllBooks = (
     bookIds?: string[];
     yearRange?: [number, number];
     regionId?: string;
+    empireId?: string;
     genreId?: string;
   },
   dtoParams: { includeLocations?: boolean } = {},
@@ -123,11 +124,18 @@ export const getAllBooks = (
         book.author.locations?.some(location => location?.regionId === params.regionId),
       );
     }
+    if (params.empireId) {
+      books = books.filter(book =>
+        book.author.empires?.some(empire => empire.id === params.empireId),
+      );
+    }
     if (params.genreId) {
       books = books.filter(book =>
         book.genres.some(genre => genre.id === params.genreId),
       );
     }
+
+    return books;
   }
 
   return books;
@@ -144,6 +152,13 @@ const get = () =>
       },
       primaryNameTranslations: true,
       otherNameTranslations: true,
+      author: {
+        include: {
+          empires: {
+            select: { id: true },
+          },
+        },
+      },
     },
   });
 
@@ -154,6 +169,7 @@ let bookIdToBook: Record<string, RawBook> | null = null;
 let authorIdToBooks: Record<string, RawBook[]> | null = null;
 let genreIdToBooks: Record<string, RawBook[]> | null = null;
 let advancedGenreIdToBooks: Record<string, RawBook[]> | null = null;
+let empireIdToBooks: Record<string, RawBook[]> | null = null;
 
 export const populateBooks = async () => {
   let books: Awaited<ReturnType<typeof get>> | undefined;
@@ -179,7 +195,7 @@ export const populateBooks = async () => {
   authorIdToBooks = {};
   genreIdToBooks = {};
   advancedGenreIdToBooks = {};
-
+  empireIdToBooks = {};
   for (const book of books) {
     bookSlugToBook[book.slug] = book;
     bookIdToBook[book.id] = book;
@@ -193,6 +209,9 @@ export const populateBooks = async () => {
         ...(advancedGenreIdToBooks![advancedGenre.id] ?? []),
         book,
       ];
+    });
+    book.author.empires?.forEach((empire: { id: string }) => {
+      empireIdToBooks![empire.id] = [...(empireIdToBooks![empire.id] ?? []), book];
     });
   }
 };

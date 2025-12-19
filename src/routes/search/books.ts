@@ -45,6 +45,11 @@ bookSearchRoutes.get(
         .transform(val => val.split(','))
         .pipe(z.array(z.string()))
         .optional(),
+      empires: z
+        .string()
+        .transform(val => val.split(','))
+        .pipe(z.array(z.string()))
+        .optional(),
       yearRange: z
         .string()
         .transform(val => val.split(','))
@@ -67,7 +72,7 @@ bookSearchRoutes.get(
     }),
   ),
   async c => {
-    const { q, limit, page, sortBy, advancedGenres, genres, authors, regions, yearRange, ids, locale } =
+    const { q, limit, page, sortBy, advancedGenres, genres, authors, regions, empires, yearRange, ids, locale } =
       c.req.valid('query');
 
     const filters: string[] = [];
@@ -86,6 +91,9 @@ bookSearchRoutes.get(
     }
     if (regions && regions.length > 0) {
       filters.push(`regions:[${regions.map(region => `\`${region}\``).join(', ')}]`);
+    }
+    if (empires && empires.length > 0) {
+      filters.push(`empires:[${empires.map(empire => `\`${empire}\``).join(', ')}]`);
     }
     if (yearRange) {
       filters.push(`year:[${yearRange[0]}..${yearRange[1]}]`);
@@ -109,26 +117,26 @@ bookSearchRoutes.get(
           ...(filters.length > 0 && { filter_by: filters.join(' && ') }),
           ...(sortBy && sortBy !== 'relevance'
             ? {
-                sort_by: {
-                  'year-asc': 'year:asc',
-                  'year-desc': 'year:desc',
-                  'alphabetical-asc': 'transliteration:asc',
-                  'alphabetical-desc': 'transliteration:desc',
-                }[sortBy],
-              }
+              sort_by: {
+                'year-asc': 'year:asc',
+                'year-desc': 'year:desc',
+                'alphabetical-asc': 'transliteration:asc',
+                'alphabetical-desc': 'transliteration:desc',
+              }[sortBy],
+            }
             : {}),
         },
         ...(authors && authors.length > 0
           ? [
-              {
-                collection: AUTHORS_COLLECTION.INDEX,
-                q: '',
-                query_by: 'primaryNames.text',
-                limit: 100,
-                page: 1,
-                filter_by: `id:[${authors.map(id => `\`${id}\``).join(', ')}]`,
-              },
-            ]
+            {
+              collection: AUTHORS_COLLECTION.INDEX,
+              q: '',
+              query_by: 'primaryNames.text',
+              limit: 100,
+              page: 1,
+              filter_by: `id:[${authors.map(id => `\`${id}\``).join(', ')}]`,
+            },
+          ]
           : []),
       ],
     });
@@ -144,10 +152,10 @@ bookSearchRoutes.get(
       pagination: formatPagination(booksResults.found, booksResults.page, limit),
       selectedAuthors: selectedAuthorsResults
         ? formatResults(
-            selectedAuthorsResults as SearchResponse<TypesenseAuthorDocument>,
-            'author',
-            author => formatAuthor(author, locale),
-          )
+          selectedAuthorsResults as SearchResponse<TypesenseAuthorDocument>,
+          'author',
+          author => formatAuthor(author, locale),
+        )
         : null,
     });
   },

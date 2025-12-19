@@ -25,6 +25,11 @@ authorSearchRoutes.get(
         .transform(val => val.split(','))
         .pipe(z.array(z.string()))
         .optional(),
+      empires: z
+        .string()
+        .transform(val => val.split(','))
+        .pipe(z.array(z.string()))
+        .optional(),
       yearRange: z
         .string()
         .transform(val => val.split(','))
@@ -49,13 +54,16 @@ authorSearchRoutes.get(
     }),
   ),
   async c => {
-    const { q, limit, page, sortBy, regions, yearRange, ids, locale } =
+    const { q, limit, page, sortBy, regions, empires, yearRange, ids, locale } =
       c.req.valid('query');
 
     const filters: string[] = [];
 
     if (regions && regions.length > 0) {
       filters.push(`regions:[${regions.map(region => `\`${region}\``).join(', ')}]`);
+    }
+    if (empires && empires.length > 0) {
+      filters.push(`empires:[${empires.map(empire => `\`${empire}\``).join(', ')}]`);
     }
     if (yearRange) {
       filters.push(`year:[${yearRange[0]}..${yearRange[1]}]`);
@@ -77,15 +85,15 @@ authorSearchRoutes.get(
         ...(filters.length > 0 && { filter_by: filters.join(' && ') }),
         ...(sortBy &&
           sortBy !== 'relevance' && {
-            sort_by: {
-              'year-asc': 'year:asc',
-              'year-desc': 'year:desc',
-              'texts-asc': 'booksCount:asc',
-              'texts-desc': 'booksCount:desc',
-              'alphabetical-asc': 'transliteration:asc',
-              'alphabetical-desc': 'transliteration:desc',
-            }[sortBy],
-          }),
+          sort_by: {
+            'year-asc': 'year:asc',
+            'year-desc': 'year:desc',
+            'texts-asc': 'booksCount:asc',
+            'texts-desc': 'booksCount:desc',
+            'alphabetical-asc': 'transliteration:asc',
+            'alphabetical-desc': 'transliteration:desc',
+          }[sortBy],
+        }),
       });
 
     return c.json({

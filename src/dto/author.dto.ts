@@ -11,6 +11,7 @@ export const makeAuthorDto = (
     otherNameTranslations: AuthorOtherNames[];
     bioTranslations: AuthorBio[];
     locations: { id: string }[];
+    empires: { id: string }[];
   },
   locale: PathLocale,
   {
@@ -39,6 +40,8 @@ export const makeAuthorDto = (
       getSecondaryLocalizedText(author.otherNameTranslations, locale) ?? [],
 
     bio: getPrimaryLocalizedText(author.bioTranslations, locale),
+
+    empires: author.empires.map(empire => ({ id: empire.id })),
 
     ...(includeLocations && {
       locations: author.locations.map(location =>

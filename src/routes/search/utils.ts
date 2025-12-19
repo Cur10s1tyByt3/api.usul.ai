@@ -7,6 +7,7 @@ import { TypesenseGenreDocument } from '@/types/typesense/genre';
 import { TypesenseAdvancedGenreDocument } from '@/types/typesense/advanced-genre';
 import { TypesenseGlobalSearchDocument } from '@/types/typesense/global-search-document';
 import { TypesenseRegionDocument } from '@/types/typesense/region';
+import { TypesenseEmpireDocument } from '@/types/typesense/empire';
 import { localeSchema } from '@/validators/locale';
 import { DocumentSchema, SearchResponse } from 'typesense/lib/Typesense/Documents';
 import { z } from 'zod';
@@ -126,7 +127,7 @@ export const formatAdvancedGenre = (
 ) => {
   const name = getPrimaryLocalizedText(genre.nameTranslations, locale);
   const { booksCount, ...rest } = genre;
-  
+
   return {
     ...rest,
     transliteration: undefined,
@@ -177,6 +178,15 @@ export const formatRegion = (region: TypesenseRegionDocument, locale: PathLocale
       ? region.subLocations.filter(subLocation => subLocation.locale === 'en')
       : subLocations
     ).map(subLocation => subLocation.text),
+  };
+};
+
+export const formatEmpire = (empire: TypesenseEmpireDocument, locale: PathLocale) => {
+  const name = getPrimaryLocalizedText(empire.names, locale);
+  return {
+    ...empire,
+    names: undefined,
+    _popularity: undefined,
   };
 };
 

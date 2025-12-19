@@ -13,16 +13,19 @@ import { populateAlternateSlugs } from '@/services/alternate-slugs';
 import { populateGenres } from '@/services/genre';
 import { getAuthorCount, populateAuthors } from '@/services/author';
 import { populateRegions } from '@/services/region';
+import { populateEmpires } from '@/services/empire';
 import { populateLocations } from '@/services/location';
 import { getBookCount, populateBooks } from '@/services/book';
 import { getAdvancedGenreCount, populateAdvancedGenres } from '@/services/advanced-genre';
 import { getGenreCount } from '@/services/genre';
 import { getRegionCount } from '@/services/region';
+import { getEmpireCount } from '@/services/empire';
 import searchRoutes from './search';
 import collectionsRoutes from './collections';
 import chatRoutes from './chat';
 import v1Routes from './v1';
 import centuryRoutes from './century';
+import empireRoutes from './empire';
 
 const routes = new Hono();
 
@@ -30,6 +33,7 @@ routes.route('/', uptimeRoutes);
 routes.route('/book', bookRoutes);
 routes.route('/century', centuryRoutes);
 routes.route('/region', regionRoutes);
+routes.route('/empire', empireRoutes);
 routes.route('/advancedGenre', advancedGenreRoutes);
 routes.route('/genre', genreRoutes);
 routes.route('/author', authorRoutes);
@@ -40,10 +44,11 @@ routes.route('/chat', chatRoutes);
 routes.route('/v1', v1Routes);
 
 routes.get('/total', async c => {
-  const [bookCount, authorCount, regionCount, advancedGenreCount, genreCount] = await Promise.all([
+  const [bookCount, authorCount, regionCount, empireCount, advancedGenreCount, genreCount] = await Promise.all([
     getBookCount(),
     getAuthorCount(),
     getRegionCount(),
+    getEmpireCount(),
     getAdvancedGenreCount(),
     getGenreCount(),
   ]);
@@ -52,6 +57,7 @@ routes.get('/total', async c => {
     books: bookCount,
     authors: authorCount,
     regions: regionCount,
+    empires: empireCount,
     advancedGenres: advancedGenreCount,
     genres: genreCount,
   });
@@ -62,6 +68,7 @@ routes.post('/reset-cache', bearerAuth({ token: env.DASHBOARD_PASSWORD }), async
   await populateAlternateSlugs();
   await populateLocations();
   await populateRegions();
+  await populateEmpires();
   await populateAdvancedGenres();
   await populateGenres();
   await populateAuthors();

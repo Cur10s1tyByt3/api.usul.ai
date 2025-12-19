@@ -45,6 +45,10 @@
       "description": "Operations related to geographical regions"
     },
     {
+      "name": "Empires",
+      "description": "Operations related to historical empires"
+    },
+    {
       "name": "Centuries",
       "description": "Operations related to historical centuries"
     },
@@ -428,15 +432,48 @@
         "summary": "All-documents search",
         "description": "Search across all documents (authors, books, genres) with pagination",
         "parameters": [
-          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
-          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
-          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
         ],
         "responses": {
           "200": {
             "description": "Search results retrieved successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AllSearchResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AllSearchResponse" }
+              }
+            }
           }
         }
       }
@@ -516,6 +553,15 @@
             "description": "Comma-separated list of region IDs to filter by"
           },
           {
+            "name": "empires",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of empire IDs to filter by"
+          },
+          {
             "name": "yearRange",
             "in": "query",
             "required": false,
@@ -539,7 +585,13 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["relevance", "year-asc", "year-desc", "alphabetical-asc", "alphabetical-desc"]
+              "enum": [
+                "relevance",
+                "year-asc",
+                "year-desc",
+                "alphabetical-asc",
+                "alphabetical-desc"
+              ]
             },
             "description": "Sort order for results"
           },
@@ -574,21 +626,94 @@
         "summary": "Search authors",
         "description": "Search for authors with various filters",
         "parameters": [
-          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
-          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
-          { "name": "regions", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated list of region IDs to filter by" },
-          { "name": "yearRange", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated year range (e.g., '1000,1500')" },
-          { "name": "ids", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated list of author IDs to filter by" },
-          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "year-asc", "year-desc", "texts-asc", "texts-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
-          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "regions",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Comma-separated list of region IDs to filter by"
+          },
+          {
+            "name": "empires",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Comma-separated list of empire IDs to filter by"
+          },
+          {
+            "name": "yearRange",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Comma-separated year range (e.g., '1000,1500')"
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Comma-separated list of author IDs to filter by"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevance",
+                "year-asc",
+                "year-desc",
+                "texts-asc",
+                "texts-desc",
+                "alphabetical-asc",
+                "alphabetical-desc"
+              ]
+            },
+            "description": "Sort order for results"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
         ],
         "responses": {
           "200": {
             "description": "Search results retrieved successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/AuthorSearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorSearchResponse"
+                }
               }
             }
           }
@@ -601,16 +726,64 @@
         "summary": "Search genres",
         "description": "Search for genres with optional sorting",
         "parameters": [
-          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
-          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
-          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "texts-asc", "texts-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
-          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevance",
+                "texts-asc",
+                "texts-desc",
+                "alphabetical-asc",
+                "alphabetical-desc"
+              ]
+            },
+            "description": "Sort order for results"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
         ],
         "responses": {
           "200": {
             "description": "Search results retrieved successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GenreSearchResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenreSearchResponse" }
+              }
+            }
           }
         }
       }
@@ -621,16 +794,64 @@
         "summary": "Search advanced genres",
         "description": "Search for advanced genres with optional sorting",
         "parameters": [
-          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
-          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
-          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "texts-asc", "texts-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
-          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevance",
+                "texts-asc",
+                "texts-desc",
+                "alphabetical-asc",
+                "alphabetical-desc"
+              ]
+            },
+            "description": "Sort order for results"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
         ],
         "responses": {
           "200": {
             "description": "Search results retrieved successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GenreSearchResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenreSearchResponse" }
+              }
+            }
           }
         }
       }
@@ -641,16 +862,140 @@
         "summary": "Search regions",
         "description": "Search for regions with optional sorting",
         "parameters": [
-          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Search query" },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }, "description": "Number of results to return" },
-          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
-          { "name": "sortBy", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "texts-asc", "texts-desc", "authors-asc", "authors-desc", "alphabetical-asc", "alphabetical-desc"] }, "description": "Sort order for results" },
-          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevance",
+                "texts-asc",
+                "texts-desc",
+                "authors-asc",
+                "authors-desc",
+                "alphabetical-asc",
+                "alphabetical-desc"
+              ]
+            },
+            "description": "Sort order for results"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
         ],
         "responses": {
           "200": {
             "description": "Search results retrieved successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegionSearchResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionSearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/empires": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Search empires",
+        "description": "Search for empires with optional sorting",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results to return"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevance",
+                "texts-asc",
+                "texts-desc",
+                "authors-asc",
+                "authors-desc",
+                "alphabetical-asc",
+                "alphabetical-desc"
+              ]
+            },
+            "description": "Sort order for results"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpireSearchResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -661,22 +1006,83 @@
         "summary": "Search within a specific book version",
         "description": "Perform semantic or keyword search within a book version",
         "parameters": [
-          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Search query" },
-          { "name": "bookId", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Book ID to search within" },
-          { "name": "versionId", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Book version ID to search within" },
-          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["semantic", "keyword"], "default": "semantic" }, "description": "Search type" },
-          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "default": 1 }, "description": "Page number for pagination" },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }, "description": "Number of results per page" },
-          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          },
+          {
+            "name": "bookId",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Book ID to search within"
+          },
+          {
+            "name": "versionId",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Book version ID to search within"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["semantic", "keyword"],
+              "default": "semantic"
+            },
+            "description": "Search type"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of results per page"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
         ],
         "responses": {
           "200": {
             "description": "Content search results retrieved successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContentSearchResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentSearchResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad request - invalid book or version",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
           }
         }
       }
@@ -1148,6 +1554,133 @@
         }
       }
     },
+    "/empire": {
+      "get": {
+        "tags": ["Empires"],
+        "summary": "Get all empires",
+        "description": "Get all empires with optional filters",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          },
+          {
+            "name": "yearRange",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated year range (e.g., '1000,1500')"
+          },
+          {
+            "name": "genreId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Genre ID to filter by"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Empires retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Empire"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empire/count": {
+      "get": {
+        "tags": ["Empires"],
+        "summary": "Get empire count",
+        "description": "Get the total number of empires in the system",
+        "responses": {
+          "200": {
+            "description": "Empire count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of empires"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empire/{slug}": {
+      "get": {
+        "tags": ["Empires"],
+        "summary": "Get empire by slug",
+        "description": "Retrieve empire information using its slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The slug of the empire"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Empire retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Empire"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empire not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/century/": {
       "get": {
         "tags": ["Centuries"],
@@ -1496,7 +2029,13 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["relevance", "year-asc", "year-desc", "alphabetical-asc", "alphabetical-desc"]
+              "enum": [
+                "relevance",
+                "year-asc",
+                "year-desc",
+                "alphabetical-asc",
+                "alphabetical-desc"
+              ]
             },
             "description": "Sort order for results"
           },
@@ -1927,7 +2466,9 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/AdvancedGenreHierarchyItem" }
+                  "items": {
+                    "$ref": "#/components/schemas/AdvancedGenreHierarchyItem"
+                  }
                 }
               }
             }
@@ -1956,7 +2497,9 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/AdvancedGenreHierarchyItem" }
+                  "items": {
+                    "$ref": "#/components/schemas/AdvancedGenreHierarchyItem"
+                  }
                 }
               }
             }
@@ -2033,7 +2576,12 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": { "total": { "type": "integer", "description": "Total number of advanced genres" } }
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of advanced genres"
+                    }
+                  }
                 }
               }
             }
@@ -2047,17 +2595,37 @@
         "summary": "Get advanced genre by slug",
         "description": "Retrieve advanced genre information using its slug",
         "parameters": [
-          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" }, "description": "The slug of the advanced genre" },
-          { "name": "locale", "in": "query", "required": false, "schema": { "type": "string", "enum": ["en", "ar"] }, "description": "Locale for localized content" }
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The slug of the advanced genre"
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["en", "ar"] },
+            "description": "Locale for localized content"
+          }
         ],
         "responses": {
           "200": {
             "description": "Advanced genre retrieved successfully",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdvancedGenre" } } }
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdvancedGenre" }
+              }
+            }
           },
           "404": {
             "description": "Advanced genre not found",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
           }
         }
       }
@@ -2135,11 +2703,23 @@
       "AdvancedGenre": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "description": "Unique identifier for the advanced genre" },
-          "slug": { "type": "string", "description": "URL-friendly identifier" },
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the advanced genre"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
           "name": { "type": "string", "description": "Primary display name" },
-          "secondaryName": { "type": "string", "description": "Secondary display name" },
-          "numberOfBooks": { "type": "integer", "description": "Associated books count (if available)" }
+          "secondaryName": {
+            "type": "string",
+            "description": "Secondary display name"
+          },
+          "numberOfBooks": {
+            "type": "integer",
+            "description": "Associated books count (if available)"
+          }
         },
         "required": ["id", "slug", "name"]
       },
@@ -2150,7 +2730,10 @@
             "type": "object",
             "properties": {
               "color": { "type": "string", "description": "UI color hint" },
-              "pattern": { "type": "integer", "description": "UI pattern identifier" }
+              "pattern": {
+                "type": "integer",
+                "description": "UI pattern identifier"
+              }
             }
           }
         ]
@@ -2282,6 +2865,40 @@
           }
         },
         "required": ["id", "slug", "name"]
+      },
+      "Empire": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the empire"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Primary name of the empire"
+          },
+          "secondaryName": {
+            "type": "string",
+            "description": "Secondary name of the empire"
+          },
+          "overview": {
+            "type": "string",
+            "description": "Overview description of the empire"
+          },
+          "numberOfAuthors": {
+            "type": "integer",
+            "description": "Number of authors associated with this empire"
+          },
+          "numberOfBooks": {
+            "type": "integer",
+            "description": "Number of books associated with this empire"
+          }
+        },
+        "required": ["id", "slug", "numberOfAuthors", "numberOfBooks"]
       },
       "Genre": {
         "type": "object",
@@ -2450,7 +3067,13 @@
                 "description": "Whether there is a next page"
               }
             },
-            "required": ["totalRecords", "totalPages", "currentPage", "hasPrev", "hasNext"]
+            "required": [
+              "totalRecords",
+              "totalPages",
+              "currentPage",
+              "hasPrev",
+              "hasNext"
+            ]
           }
         },
         "required": ["data", "results", "pagination"]
@@ -2667,7 +3290,10 @@
           "results": {
             "type": "object",
             "properties": {
-              "hits": { "type": "array", "items": { "$ref": "#/components/schemas/Genre" } },
+              "hits": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Genre" }
+              },
               "found": { "type": "integer" }
             }
           },
@@ -2688,7 +3314,34 @@
           "results": {
             "type": "object",
             "properties": {
-              "hits": { "type": "array", "items": { "$ref": "#/components/schemas/Region" } },
+              "hits": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Region" }
+              },
+              "found": { "type": "integer" }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": { "type": "integer" },
+              "perPage": { "type": "integer" },
+              "totalPages": { "type": "integer" }
+            }
+          }
+        },
+        "required": ["results", "pagination"]
+      },
+      "EmpireSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "object",
+            "properties": {
+              "hits": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Empire" }
+              },
               "found": { "type": "integer" }
             }
           },
@@ -2709,7 +3362,13 @@
           "results": {
             "type": "object",
             "properties": {
-              "hits": { "type": "array", "items": { "type": "object", "description": "Search result document (book, author, or genre)" } },
+              "hits": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "description": "Search result document (book, author, or genre)"
+                }
+              },
               "found": { "type": "integer" }
             }
           },

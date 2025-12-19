@@ -8,6 +8,7 @@ import { populateGenres } from './services/genre';
 import { populateBooks } from './services/book';
 import { populateRegions } from './services/region';
 import { populateLocations } from './services/location';
+import { populateEmpires } from './services/empire';
 import { populateAlternateSlugs } from './services/alternate-slugs';
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
@@ -22,12 +23,14 @@ await Promise.all([
   populateGenres(),
   populateLocations(),
   populateRegions(),
+  populateEmpires(),
   populateAlternateSlugs(),
 ]);
 console.log('✅ Populated advanced genres');
 console.log('✅ Populated genres');
 console.log('✅ Populated locations');
 console.log('✅ Populated regions');
+console.log('✅ Populated empires');
 console.log('✅ Populated alternate slugs');
 
 await populateAuthors();

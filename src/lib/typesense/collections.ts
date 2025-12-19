@@ -47,3 +47,12 @@ export const REGIONS_COLLECTION = {
   INDEX: 'regions',
   DEFAULT_PER_PAGE: 5,
 };
+
+export const empiresQueryWeights = {
+  1: ['names.text'],
+};
+
+export const EMPIRES_COLLECTION = {
+  INDEX: 'empires',
+  DEFAULT_PER_PAGE: 5,
+};
