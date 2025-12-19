@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { authorsAirtable } from '../util/airtable';
-import { translateAndTransliterateName } from '../util/openai';
+import { translateToLocalesBatch } from '../util/openai';
 import { locales, AppLocale } from '@/lib/locale';
 import slugify from 'slugify';
 import { createInterface } from 'node:readline/promises';
@@ -16,40 +16,40 @@ const translateToAllLocales = async (
   type: 'region',
   englishName: string,
 ): Promise<Map<string, { translation: string; transliteration: string }>> => {
-  const translations = new Map<
-    string,
-    { translation: string; transliteration: string }
-  >();
+  console.log(`  Translating "${englishName}" to all languages in one request...`);
 
-  // English is the source, so we use it directly
-  translations.set('en', {
-    translation: englishName,
-    transliteration: '',
-  });
+  // Get all locale codes
+  const localeCodes = locales.map(locale => locale.code) as AppLocale[];
 
-  // Translate to all other locales
+  // Use batch translation
+  const translations = await translateToLocalesBatch(type, englishName, localeCodes);
+
+  // Ensure English is set (it should be, but just in case)
+  if (!translations.has('en')) {
+    translations.set('en', {
+      translation: englishName,
+      transliteration: '',
+    });
+  }
+
+  // Convert locale codes to database locale codes
+  const result = new Map<string, { translation: string; transliteration: string }>();
+  for (const [locale, data] of translations.entries()) {
+    result.set(locale, data);
+  }
+
+  // Also ensure we have entries for all expected database locales
   for (const locale of locales) {
-    if (locale.code === 'en-US') continue; // Skip English as it's the source
-
-    console.log(`  Translating to ${locale.name}...`);
-    const result = await translateAndTransliterateName(
-      type,
-      englishName,
-      locale.code,
-    );
-
-    if (result) {
-      const dbLocale = appLocaleToDbLocale(locale.code);
-      translations.set(dbLocale, {
-        translation: result.translation,
-        transliteration: result.transliteration,
+    const dbLocale = appLocaleToDbLocale(locale.code);
+    if (!result.has(dbLocale) && locale.code === 'en-US') {
+      result.set('en', {
+        translation: englishName,
+        transliteration: '',
       });
-    } else {
-      console.warn(`    Failed to translate to ${locale.name}`);
     }
   }
 
-  return translations;
+  return result;
 };
 
 // Fetch regions from Airtable
@@ -246,7 +246,151 @@ const linkAuthorsToRegions = async (
   }
 
   console.log(`Created ${createdLocationsCount} locations`);
-  console.log(`Linked ${linkedCount} authors to regions`);
+  console.log(`Linked ${linkedCount} authors to regions via locations`);
+};
+
+// Link authors directly to regions via _AuthorToRegion junction table
+const linkAuthorsToRegionsDirect = async (
+  regionIdToName: Map<string, string>,
+  regionNameToSlug: Map<string, string>,
+  regionSlugToId: Map<string, string>,
+) => {
+  console.log('\nLinking authors directly to regions...');
+
+  // Fetch all authors from Airtable
+  const authors = await authorsAirtable('Authors').select().all();
+  console.log(`Found ${authors.length} authors in Airtable`);
+
+  // Fetch all existing authors from database to create a lookup map
+  const existingAuthors = await db.author.findMany({
+    select: {
+      id: true,
+    },
+  });
+  const authorIdsSet = new Set(existingAuthors.map(a => a.id));
+  console.log(`Found ${existingAuthors.length} authors in database`);
+
+  // Fetch existing regions from database (fetch again to get latest after creates/updates)
+  const existingRegions = await db.region.findMany({
+    select: {
+      id: true,
+      slug: true,
+    },
+  });
+  console.log(`Found ${existingRegions.length} regions in database`);
+
+  let authorsWithRegions = 0;
+  let authorsSkipped = 0;
+  let regionsNotFound = 0;
+
+  // Collect all updates first (batch processing)
+  const updates: Array<{ authorId: string; regionIds: string[] }> = [];
+
+  // Process authors and collect updates
+  for (let i = 0; i < authors.length; i++) {
+    const author = authors[i];
+    const fields = author.fields;
+    const authorId = fields['Author ID'] as string | undefined;
+
+    // Progress logging every 100 authors
+    if (i % 100 === 0) {
+      console.log(`  Processing authors ${i + 1}/${authors.length}...`);
+    }
+
+    if (!authorId) {
+      authorsSkipped++;
+      continue;
+    }
+
+    // Check if author exists in database
+    if (!authorIdsSet.has(authorId)) {
+      authorsSkipped++;
+      continue;
+    }
+
+    const regionIds = (fields['Regions الدول المعاصرة'] as string[]) || [];
+    if (regionIds.length === 0) {
+      continue;
+    }
+
+    authorsWithRegions++;
+    // Get region IDs for this author
+    const dbRegionIds: string[] = [];
+
+    for (const regionAirtableId of regionIds) {
+      const regionName = regionIdToName.get(regionAirtableId);
+      if (!regionName) {
+        regionsNotFound++;
+        continue;
+      }
+
+      // Try to find region by name (exact match first, then normalized)
+      let regionId = regionNameToSlug.get(regionName);
+      if (!regionId) {
+        // Try normalized name
+        const normalizedName = regionName.trim().toLowerCase();
+        regionId = regionNameToSlug.get(normalizedName);
+      }
+
+      // If still not found, try to generate slug and match
+      if (!regionId) {
+        const potentialSlug = slugify(regionName, { lower: true, trim: true });
+        regionId = regionSlugToId.get(potentialSlug);
+      }
+
+      if (!regionId) {
+        regionsNotFound++;
+        continue;
+      }
+
+      dbRegionIds.push(regionId);
+    }
+
+    // Collect update
+    if (dbRegionIds.length > 0) {
+      updates.push({ authorId, regionIds: dbRegionIds });
+    }
+  }
+
+  console.log(`\n  Collected ${updates.length} author-region updates to apply`);
+  console.log(`  - Authors with regions in Airtable: ${authorsWithRegions}`);
+  console.log(`  - Authors skipped (no Author ID or not in DB): ${authorsSkipped}`);
+  console.log(`  - Regions not found: ${regionsNotFound}`);
+
+  // Batch update authors (process in chunks to avoid overwhelming the database)
+  const BATCH_SIZE = 50;
+  let linkedCount = 0;
+
+  console.log(`\n  Applying updates in batches of ${BATCH_SIZE}...`);
+  for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+    const batch = updates.slice(i, i + BATCH_SIZE);
+
+    // Process batch in parallel
+    await Promise.all(
+      batch.map(async ({ authorId, regionIds }) => {
+        try {
+          await db.author.update({
+            where: { id: authorId },
+            data: {
+              regions: {
+                set: regionIds.map(id => ({ id })),
+              },
+            },
+          });
+          linkedCount++;
+        } catch (e) {
+          console.error(`Failed to link author ${authorId} to regions:`, e);
+        }
+      })
+    );
+
+    // Progress logging
+    if ((i + BATCH_SIZE) % 500 === 0 || i + BATCH_SIZE >= updates.length) {
+      console.log(`  Updated ${Math.min(i + BATCH_SIZE, updates.length)}/${updates.length} authors...`);
+    }
+  }
+
+  console.log(`\nLinked ${linkedCount} authors directly to regions`);
 };
 
 // Main sync function
@@ -568,16 +712,31 @@ const main = async () => {
     }
   }
 
+  // Create maps for linking - need both name->slug and also create a slug-based lookup
   const regionNameToSlug = new Map<string, string>();
-  for (const region of await db.region.findMany({ select: { id: true, nameTranslations: true } })) {
+  const regionSlugToId = new Map<string, string>();
+
+  for (const region of await db.region.findMany({
+    select: { id: true, slug: true, nameTranslations: true }
+  })) {
     const englishName = region.nameTranslations.find(t => t.locale === 'en');
     if (englishName) {
+      // Normalize the name (trim whitespace, lowercase for matching)
+      const normalizedName = englishName.text.trim().toLowerCase();
+      regionNameToSlug.set(normalizedName, region.id);
+      // Also store the original name mapping
       regionNameToSlug.set(englishName.text, region.id);
     }
+    regionSlugToId.set(region.slug, region.id);
   }
 
-  // Link authors to regions
+  console.log(`Created region mapping with ${regionNameToSlug.size} name entries`);
+
+  // Link authors to regions via locations
   await linkAuthorsToRegions(regionIdToName, regionNameToSlug);
+
+  // Link authors directly to regions via _AuthorToRegion junction table
+  await linkAuthorsToRegionsDirect(regionIdToName, regionNameToSlug, regionSlugToId);
 
   console.log('\n✅ Sync completed!');
 };
