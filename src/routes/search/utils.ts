@@ -186,6 +186,10 @@ export const formatEmpire = (empire: TypesenseEmpireDocument, locale: PathLocale
   return {
     ...empire,
     names: undefined,
+
+    primaryName: name,
+    secondaryName: getSecondaryLocalizedText(empire.names, locale),
+
     _popularity: undefined,
   };
 };

@@ -5,7 +5,7 @@ import authorSearchRoutes from './authors';
 import advancedGenreRoutes from './advancedGenres';
 import genresSearchRoutes from './genres';
 import regionsSearchRoutes from './regions';
-import empireSearchRoutes from './empire';
+import empireSearchRoutes from './empires';
 import allSearchRoutes from './all';
 import contentSearchRoutes from './content';
 
