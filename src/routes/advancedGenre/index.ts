@@ -89,12 +89,10 @@ const homepageAdvancedGenres = [
 advancedGenreRoutes.get('/homepage', localeQueryValidator, async c => {
   const { locale } = c.req.valid('query');
 
-  const genres = await Promise.all(
-    homepageAdvancedGenres.map(async genre => ({
-      ...genre,
-      ...((await getAdvancedGenreById(genre.id, locale)) ?? {}),
-    }))
-  );
+  const genres = homepageAdvancedGenres.map(genre => ({
+    ...genre,
+    ...(getAdvancedGenreById(genre.id, locale) ?? {}),
+  }));
 
   return c.json(genres);
 });
@@ -148,7 +146,7 @@ advancedGenreRoutes.get(
     const { slug } = c.req.valid('param');
     const { locale } = c.req.valid('query');
 
-    const genre = await getAdvancedGenreBySlug(slug, locale);
+    const genre = getAdvancedGenreBySlug(slug, locale);
     if (!genre) {
       throw new HTTPException(404, { message: 'Genre not found' });
     }

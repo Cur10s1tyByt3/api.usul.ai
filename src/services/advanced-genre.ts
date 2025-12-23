@@ -7,17 +7,16 @@ import fs from 'fs';
 import path from 'path';
 import { getAllBooks } from './book';
 
-export const getAdvancedGenreById = async (id: string, locale: PathLocale = 'en') => {
+export const getAdvancedGenreById = (id: string, locale: PathLocale = 'en') => {
   if (!genreIdToGenre) {
-    await populateAdvancedGenres();
+    throw new Error('Advanced genres not populated. Call populateAdvancedGenres() first.');
   }
 
-  const genre = genreIdToGenre?.[id];
+  const genre = genreIdToGenre[id];
   if (!genre) return null;
 
-  // Get aggregated count for this genre
-  const aggregatedCounts = await calculateAggregatedCounts();
-  const aggregatedCount = aggregatedCounts.get(id) || 0;
+  // Get aggregated count from cache
+  const aggregatedCount = cachedAggregatedCounts?.get(id) || 0;
 
   // Create genre with aggregated count
   const genreWithAggregatedCount = {
@@ -28,17 +27,16 @@ export const getAdvancedGenreById = async (id: string, locale: PathLocale = 'en'
   return makeGenreDto(genreWithAggregatedCount, locale);
 };
 
-export const getAdvancedGenreBySlug = async (slug: string, locale: PathLocale = 'en') => {
+export const getAdvancedGenreBySlug = (slug: string, locale: PathLocale = 'en') => {
   if (!genreIdToGenre) {
-    await populateAdvancedGenres();
+    throw new Error('Advanced genres not populated. Call populateAdvancedGenres() first.');
   }
 
   const genre = genreSlugToGenre?.[slug];
   if (!genre) return null;
 
-  // Get aggregated count for this genre
-  const aggregatedCounts = await calculateAggregatedCounts();
-  const aggregatedCount = aggregatedCounts.get(genre.id) || 0;
+  // Get aggregated count from cache
+  const aggregatedCount = cachedAggregatedCounts?.get(genre.id) || 0;
 
   // Create genre with aggregated count
   const genreWithAggregatedCount = {
@@ -479,6 +477,6 @@ export const populateAdvancedGenres = async () => {
     genreSlugToGenre[genre.slug] = genre;
   }
 
-  // Invalidate cached aggregated counts when genres are repopulated
-  cachedAggregatedCounts = null;
+  // Pre-populate aggregated counts cache
+  await calculateAggregatedCounts();
 };
