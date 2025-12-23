@@ -38,17 +38,11 @@ regionRoutes.get(
   '/:slug',
   zValidator('param', z.object({ slug: z.string() })),
   localeQueryValidator,
-  zValidator(
-    'query',
-    z.object({
-      locations: z.coerce.boolean().optional().default(false),
-    }),
-  ),
   c => {
     const { slug } = c.req.valid('param');
-    const { locale, locations } = c.req.valid('query');
+    const { locale } = c.req.valid('query');
 
-    const region = getRegionBySlug(slug, locale, { includeLocations: locations });
+    const region = getRegionBySlug(slug, locale);
     if (!region) {
       throw new HTTPException(404, { message: 'Region not found' });
     }

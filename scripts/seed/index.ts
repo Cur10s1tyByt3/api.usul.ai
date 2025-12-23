@@ -77,33 +77,6 @@ async function seedRegions() {
   console.log(`Seeded regions: ${base.length}`);
 }
 
-async function seedLocations() {
-  const file = resolveCacheFile('locations.json');
-  const locations = readJson<UnknownRecord[]>(file);
-
-  const base = locations.map(l => ({
-    id: l.id,
-    slug: l.slug,
-    name: l.name,
-    type: l.type,
-    transliteration: l.transliteration ?? null,
-    regionId: l.regionId ?? null,
-  }));
-  if (base.length) await db.location.createMany({ data: base, skipDuplicates: true });
-
-  const cityNames = locations.flatMap(l =>
-    (l.cityNameTranslations ?? []).map((t: any) => ({
-      locationId: l.id,
-      locale: t.locale,
-      text: t.text,
-    })),
-  );
-  if (cityNames.length)
-    await db.locationCityName.createMany({ data: cityNames, skipDuplicates: true });
-
-  console.log(`Seeded locations: ${base.length}`);
-}
-
 async function seedAuthors() {
   const file = resolveCacheFile('authors.json');
   const authors = readJson<UnknownRecord[]>(file);
@@ -149,25 +122,13 @@ async function seedAuthors() {
   );
   if (bios.length) await db.authorBio.createMany({ data: bios, skipDuplicates: true });
 
-  // Connect author <-> locations many-to-many
-  const authorsWithLocations = authors
-    .map(a => ({ id: a.id, locationIds: (a.locations ?? []).map((l: any) => l.id) }))
-    .filter(a => a.locationIds.length > 0);
-
-  // process in chunks to avoid overwhelming the DB
-  for (const group of chunk(authorsWithLocations, 50)) {
-    await Promise.all(
-      group.map(a =>
-        db.author.update({
-          where: { id: a.id },
-          data: { locations: { set: [], connect: a.locationIds.map(id => ({ id })) } },
-        }),
-      ),
-    );
-  }
+  // Connect author <-> regions many-to-many
+  const authorsWithRegions = authors
+    .map(a => ({ id: a.id, regionIds: (a.regions ?? []).map((r: any) => r.id) }))
+    .filter(a => a.regionIds.length > 0);
 
   console.log(
-    `Seeded authors: ${base.length} (with ${authorsWithLocations.length} location relations)`,
+    `Seeded authors: ${base.length} (with ${authorsWithRegions.length} region relations)`,
   );
 }
 
@@ -196,7 +157,7 @@ async function seedAdvancedGenres() {
     await db.advancedGenreName.createMany({ data: names, skipDuplicates: true });
 
   console.log(`Seeded advanced genres: ${base.length}`);
-  
+
 }
 
 async function seedGenres() {
@@ -310,7 +271,6 @@ async function main() {
   console.log('Seeding from ./cache (fallback to ./.cache) ...');
   // Order matters due to FKs and relations
   await seedRegions();
-  await seedLocations();
   await seedAuthors();
   await seedAdvancedGenres();
   await seedGenres();

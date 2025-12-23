@@ -14,7 +14,6 @@ import { populateGenres } from '@/services/genre';
 import { getAuthorCount, populateAuthors } from '@/services/author';
 import { populateRegions } from '@/services/region';
 import { populateEmpires } from '@/services/empire';
-import { populateLocations } from '@/services/location';
 import { getBookCount, populateBooks } from '@/services/book';
 import { getAdvancedGenreCount, populateAdvancedGenres } from '@/services/advanced-genre';
 import { getGenreCount } from '@/services/genre';
@@ -66,7 +65,6 @@ routes.get('/total', async c => {
 
 routes.post('/reset-cache', bearerAuth({ token: env.DASHBOARD_PASSWORD }), async c => {
   await populateAlternateSlugs();
-  await populateLocations();
   await populateRegions();
   await populateEmpires();
   await populateAdvancedGenres();

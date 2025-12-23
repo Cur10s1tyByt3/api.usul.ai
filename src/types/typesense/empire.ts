@@ -5,6 +5,7 @@ export type TypesenseEmpireDocument = {
   slug: string;
 
   names: LocalizedEntry[];
+  overviewTranslations: LocalizedEntry[];
 
   booksCount: number;
   authorsCount: number;

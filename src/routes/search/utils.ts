@@ -156,11 +156,6 @@ export const formatGenre = (genre: TypesenseGenreDocument, locale: PathLocale) =
 
 export const formatRegion = (region: TypesenseRegionDocument, locale: PathLocale) => {
   const name = getPrimaryLocalizedText(region.names, locale);
-  const currentName = getPrimaryLocalizedText(region.currentNames, locale);
-
-  const subLocations = region.subLocations.filter(
-    subLocation => subLocation.locale === locale,
-  );
 
   return {
     ...region,
@@ -171,13 +166,7 @@ export const formatRegion = (region: TypesenseRegionDocument, locale: PathLocale
     primaryName: name,
     secondaryName: getSecondaryLocalizedText(region.names, locale),
 
-    currentNames: undefined,
-    currentName: currentName,
-
-    subLocations: (subLocations.length === 0 && locale !== 'en'
-      ? region.subLocations.filter(subLocation => subLocation.locale === 'en')
-      : subLocations
-    ).map(subLocation => subLocation.text),
+    overview: getPrimaryLocalizedText(region.overviewTranslations, locale),
   };
 };
 
@@ -189,6 +178,8 @@ export const formatEmpire = (empire: TypesenseEmpireDocument, locale: PathLocale
 
     primaryName: name,
     secondaryName: getSecondaryLocalizedText(empire.names, locale),
+
+    overview: getPrimaryLocalizedText(empire.overviewTranslations, locale),
 
     _popularity: undefined,
   };

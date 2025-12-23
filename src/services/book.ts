@@ -90,15 +90,11 @@ export const getAllBooks = (
     empireId?: string;
     genreId?: string;
   },
-  dtoParams: { includeLocations?: boolean } = {},
 ) => {
   let books = Object.values(bookIdToBook ?? {}).map(book =>
     makeBookDto(
       book,
       locale,
-      (params && params.regionId) || dtoParams.includeLocations
-        ? { includeLocations: true }
-        : {},
     ),
   );
 
@@ -121,7 +117,7 @@ export const getAllBooks = (
     }
     if (params.regionId) {
       books = books.filter(book =>
-        book.author.locations?.some(location => location?.regionId === params.regionId),
+        book.author.regions?.some(region => region.id === params.regionId),
       );
     }
     if (params.empireId) {

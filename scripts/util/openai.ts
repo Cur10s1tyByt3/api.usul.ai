@@ -30,7 +30,7 @@ const SYSTEM_PROMPT = (type: Type, locale: AppLocale) => {
 
   const typeDescription =
     type === 'region'
-      ? 'a historice location'
+      ? 'a historical region'
       : type === 'empire'
         ? 'an historical empire or era'
         : 'an islamic genre';
@@ -184,7 +184,7 @@ export const translateToLocalesBatch = async (
 
   const systemPrompt = `
   You are a bot that takes ${type === 'region'
-      ? 'a historical location'
+      ? 'a historical region'
       : type === 'empire'
         ? 'an historical empire or era'
         : 'an islamic genre'

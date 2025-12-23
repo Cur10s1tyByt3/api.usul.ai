@@ -8,23 +8,21 @@ import path from 'path';
 export const getAuthorById = (
   id: string,
   locale: PathLocale = 'en',
-  params: { includeLocations?: boolean } = {},
 ) => {
   const author = authorIdToAuthor?.[id];
   if (!author) return null;
 
-  return makeAuthorDto(author, locale, params);
+  return makeAuthorDto(author, locale);
 };
 
 export const getAuthorBySlug = (
   slug: string,
   locale: PathLocale = 'en',
-  params: { includeLocations?: boolean } = {},
 ) => {
   const author = authorSlugToAuthor?.[slug];
   if (!author) return null;
 
-  return makeAuthorDto(author, locale, params);
+  return makeAuthorDto(author, locale);
 };
 
 export const getAuthorCount = async () => {
@@ -41,11 +39,11 @@ const get = () =>
       primaryNameTranslations: true,
       otherNameTranslations: true,
       bioTranslations: true,
-      locations: {
-        select: { id: true },
+      regions: {
+        select: { id: true, nameTranslations: true },
       },
       empires: {
-        select: { id: true },
+        select: { id: true, nameTranslations: true },
       },
     },
   });

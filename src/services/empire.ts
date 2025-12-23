@@ -36,7 +36,7 @@ export const getAllEmpires = (
 ): EmpireDto[] => {
   let empires = Object.values(empireIdToEmpire ?? {});
   if (params && (params.yearRange || params.genreId)) {
-    const books = getAllBooks(locale, params, { includeLocations: true });
+    const books = getAllBooks(locale, params);
 
     const empireIdsToCount: Record<string, number> = {};
     const empireIdsToAuthorIds: Record<string, Set<string>> = {};

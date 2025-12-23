@@ -124,7 +124,7 @@ export const getGenreIdsWithDescendants = async (genreIds: string[]): Promise<st
   for (const genreId of genreIds) {
     // Include the genre itself
     resultSet.add(genreId);
-    
+
     // Include all descendants
     const descendants = descendantsMap.get(genreId);
     if (descendants) {
@@ -149,13 +149,14 @@ export const calculateAggregatedCounts = async (params?: {
   bookIds?: string[];
   yearRange?: [number, number];
   regionId?: string;
+  empireId?: string;
 }): Promise<Map<string, number>> => {
   if (!genreIdToGenre) {
     await populateAdvancedGenres();
   }
 
   // Use cache for the common case (no params)
-  if (!params || (!params.authorId && !params.bookIds && !params.yearRange && !params.regionId)) {
+  if (!params || (!params.authorId && !params.bookIds && !params.yearRange && !params.regionId && !params.empireId)) {
     if (cachedAggregatedCounts) {
       // Return a new Map to avoid mutation issues
       return new Map(cachedAggregatedCounts);
@@ -166,15 +167,24 @@ export const calculateAggregatedCounts = async (params?: {
   let books;
   try {
     books = await db.book.findMany({
-    where: params
-      ? {
+      where: params
+        ? {
           ...(params.authorId && { authorId: params.authorId }),
           ...(params.bookIds && { id: { in: params.bookIds } }),
           ...(params.regionId && {
             author: {
-              locations: {
+              regions: {
                 some: {
-                  regionId: params.regionId,
+                  id: params.regionId,
+                },
+              },
+            },
+          }),
+          ...(params.empireId && {
+            author: {
+              empires: {
+                some: {
+                  id: params.empireId,
                 },
               },
             },
@@ -188,16 +198,16 @@ export const calculateAggregatedCounts = async (params?: {
             },
           }),
         }
-      : undefined,
-    select: {
-      id: true,
-      advancedGenres: {
-        select: {
-          id: true,
+        : undefined,
+      select: {
+        id: true,
+        advancedGenres: {
+          select: {
+            id: true,
+          },
         },
       },
-    },
-  });
+    });
   } catch (error: any) {
     // Handle database connection errors gracefully
     // If we have cached counts, return them; otherwise return empty counts
@@ -294,7 +304,7 @@ export const calculateAggregatedCounts = async (params?: {
   }
 
   // Cache the result for the no-params case (most common)
-  if (!params || (!params.authorId && !params.bookIds && !params.yearRange && !params.regionId)) {
+  if (!params || (!params.authorId && !params.bookIds && !params.yearRange && !params.regionId && !params.empireId)) {
     cachedAggregatedCounts = aggregatedCounts;
   }
 
@@ -313,6 +323,7 @@ export const aggregateChildGenresToParents = async (
     bookIds?: string[];
     yearRange?: [number, number];
     regionId?: string;
+    empireId?: string;
   },
 ) => {
   if (!genreIdToGenre) {
@@ -401,7 +412,7 @@ export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
       id: g.id,
       slug: g.slug,
       primaryName: primaryName || g.transliteration || g.slug,
-      secondaryName:  secondaryName,
+      secondaryName: secondaryName,
       numberOfBooks: aggregatedCounts.get(g.id) || 0,
     });
   }

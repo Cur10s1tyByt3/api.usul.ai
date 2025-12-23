@@ -9,24 +9,22 @@ import { getAllBooks } from './book';
 export const getRegionById = (
   id: string,
   locale: PathLocale = 'en',
-  params: { includeLocations?: boolean } = {},
 ): RegionDto | null => {
   const region = regionIdToRegion?.[id];
   if (!region) return null;
 
-  return makeRegionDto(region, locale, params);
+  return makeRegionDto(region, locale);
 };
 
 export const getRegionBySlug = (
   slug: string,
   locale: PathLocale = 'en',
-  params: { includeLocations?: boolean } = {},
 ): RegionDto | null => {
   const region = regionSlugToRegion?.[slug];
 
   if (!region) return null;
 
-  return makeRegionDto(region, locale, params);
+  return makeRegionDto(region, locale);
 };
 
 export const getAllRegions = (
@@ -38,13 +36,13 @@ export const getAllRegions = (
 ): RegionDto[] => {
   let regions = Object.values(regionIdToRegion ?? {});
   if (params && (params.yearRange || params.genreId)) {
-    const books = getAllBooks(locale, params, { includeLocations: true });
+    const books = getAllBooks(locale, params);
 
     const regionIdsToCount: Record<string, number> = {};
     const regionIdsToAuthorIds: Record<string, Set<string>> = {};
 
     for (const book of books) {
-      const regionIds = book.author.locations?.map(location => location?.regionId) ?? [];
+      const regionIds = book.author.regions?.map(region => region.id) ?? [];
 
       for (const regionId of regionIds) {
         if (!regionId) continue;
@@ -79,7 +77,6 @@ const get = () =>
   db.region.findMany({
     include: {
       nameTranslations: true,
-      currentNameTranslations: true,
       overviewTranslations: true,
     },
   });

@@ -27,8 +27,8 @@ authorRoutes.get(
     const { locale } = c.req.valid('query');
 
     const author =
-      getAuthorBySlug(slug, locale, { includeLocations: true }) ||
-      getAuthorById(slug, locale, { includeLocations: true });
+      getAuthorBySlug(slug, locale) ||
+      getAuthorById(slug, locale);
 
     if (!author) {
       const alternateSlugAuthorId = getAuthorByAlternateSlug(slug);

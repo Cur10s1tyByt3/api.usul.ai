@@ -1,7 +1,6 @@
 import { PathLocale } from '@/lib/locale';
 import { getPrimaryLocalizedText, getSecondaryLocalizedText } from '@/lib/localization';
 import { Author, AuthorBio, AuthorOtherNames, AuthorPrimaryName } from '@prisma/client';
-import { getLocationById } from '@/services/location';
 
 export type AuthorDto = ReturnType<typeof makeAuthorDto>;
 
@@ -10,15 +9,10 @@ export const makeAuthorDto = (
     primaryNameTranslations: AuthorPrimaryName[];
     otherNameTranslations: AuthorOtherNames[];
     bioTranslations: AuthorBio[];
-    locations: { id: string }[];
-    empires: { id: string }[];
+    regions: { id: string; slug: string; nameTranslations: { locale: string; text: string }[] }[];
+    empires: { id: string; slug: string; nameTranslations: { locale: string; text: string }[] }[];
   },
   locale: PathLocale,
-  {
-    includeLocations = false,
-  }: {
-    includeLocations?: boolean;
-  } = {},
 ) => {
   const primaryName = getPrimaryLocalizedText(author.primaryNameTranslations, locale);
   const otherNames = getPrimaryLocalizedText(author.otherNameTranslations, locale) ?? [];
@@ -41,12 +35,8 @@ export const makeAuthorDto = (
 
     bio: getPrimaryLocalizedText(author.bioTranslations, locale),
 
-    empires: author.empires.map(empire => ({ id: empire.id })),
+    regions: author.regions.map(region => ({ id: region.id, slug: region.slug, name: getPrimaryLocalizedText(region.nameTranslations, locale), secondaryName: getSecondaryLocalizedText(region.nameTranslations, locale) })),
 
-    ...(includeLocations && {
-      locations: author.locations.map(location =>
-        getLocationById(location.id, locale, { includeRegion: true }),
-      ),
-    }),
+    empires: author.empires.map(empire => ({ id: empire.id, slug: empire.slug, name: getPrimaryLocalizedText(empire.nameTranslations, locale), secondaryName: getSecondaryLocalizedText(empire.nameTranslations, locale) })),
   };
 };

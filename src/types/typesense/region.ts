@@ -7,12 +7,9 @@ export type TypesenseRegionDocument = {
   transliteration?: string;
   currentNameTransliteration?: string;
   names: LocalizedEntry[];
-  currentNames: LocalizedEntry[];
+  overviewTranslations: LocalizedEntry[];
 
   booksCount: number;
   authorsCount: number;
   _popularity: number;
-
-  subLocations: LocalizedEntry[];
-  subLocationsCount: number;
 };
