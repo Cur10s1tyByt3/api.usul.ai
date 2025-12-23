@@ -39,8 +39,7 @@ export const GENRES_COLLECTION = {
 };
 
 export const regionsQueryWeights = {
-  2: ['names.text', 'currentNames.text'],
-  1: ['subLocations.text'],
+  2: ['names.text'],
 };
 
 export const REGIONS_COLLECTION = {
