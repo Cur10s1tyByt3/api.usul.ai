@@ -13,6 +13,9 @@ export const makeEmpireDto = (
   slug: string;
   name: string | undefined;
   secondaryName: string | undefined;
+  transliteration?: string;
+  hijriStartYear?: number;
+  hijriEndYear?: number;
   overview: string | undefined;
   numberOfAuthors: number;
   numberOfBooks: number;
@@ -25,6 +28,10 @@ export const makeEmpireDto = (
 
     name: name,
     secondaryName: getSecondaryLocalizedText(empire.nameTranslations, locale),
+    transliteration: empire.transliteration ?? undefined,
+
+    hijriStartYear: empire.hijriStartYear ?? undefined,
+    hijriEndYear: empire.hijriEndYear ?? undefined,
 
     overview: getPrimaryLocalizedText(empire.overviewTranslations, locale),
     numberOfAuthors: empire.numberOfAuthors,

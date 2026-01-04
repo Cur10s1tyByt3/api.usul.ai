@@ -83,16 +83,20 @@ const getAirtableEmpires = async () => {
     ).map(e => {
         const fields = e.fields;
         const name = fields['Empire & Era'] as string;
-        const hijriDate = fields['Hijri Date'] as string | undefined;
-        const georgianDate = fields['Georgian Date'] as string | undefined;
+        const arabicName = fields['Arabic Name'] as string;
+        const transliteration = fields['Transliteration'] as string | undefined;
+        const hijriStartYear = fields['Hijri Year - start'] as string | undefined;
+        const hijriEndYear = fields['Hijri Year - end'] as string | undefined;
         const regions = (fields['Regions'] as string[]) || [];
         const authors = (fields['Authors'] as string[]) || [];
 
         return {
             _airtableReference: e.id,
             name: name || '',
-            hijriDate,
-            georgianDate,
+            arabicName: arabicName || '',
+            transliteration: transliteration || '',
+            hijriStartYear: hijriStartYear ? parseInt(hijriStartYear) : undefined,
+            hijriEndYear: hijriEndYear ? parseInt(hijriEndYear) : undefined,
             regionIds: regions,
             authorIds: authors,
         };
@@ -634,6 +638,9 @@ const main = async () => {
                     slug,
                     numberOfAuthors: counts.numberOfAuthors,
                     numberOfBooks: counts.numberOfBooks,
+                    transliteration: airtableEmpire.transliteration,
+                    hijriStartYear: airtableEmpire.hijriStartYear,
+                    hijriEndYear: airtableEmpire.hijriEndYear,
                     nameTranslations: {
                         createMany: {
                             data: translationData,
@@ -646,6 +653,22 @@ const main = async () => {
                     },
                 },
             });
+
+            // Update Airtable with the database ID
+            try {
+                await authorsAirtable('Empires & Eras').update(
+                    airtableEmpire._airtableReference,
+                    {
+                        ID: slug,
+                    },
+                );
+                console.log(`  Updated Airtable ID field: ${slug}`);
+            } catch (airtableError) {
+                console.warn(
+                    `  Failed to update Airtable ID for ${airtableEmpire.name}:`,
+                    airtableError,
+                );
+            }
 
             const translationsList = Array.from(allTranslations.entries())
                 .map(([locale, { translation }]) => `${locale.toUpperCase()}: ${translation}`)
@@ -670,6 +693,8 @@ const main = async () => {
             console.warn(`Failed to translate empire name: ${airtable.name}`);
             continue;
         }
+
+        allTranslations.set('ar', { translation: airtable.arabicName, transliteration: airtable.transliteration });
 
         // Generate overviews for all locales
         console.log(`\nGenerating overviews for "${airtable.name}"...`);
@@ -730,6 +755,9 @@ const main = async () => {
                 data: {
                     numberOfAuthors: counts.numberOfAuthors,
                     numberOfBooks: counts.numberOfBooks,
+                    transliteration: airtable.transliteration,
+                    hijriStartYear: airtable.hijriStartYear,
+                    hijriEndYear: airtable.hijriEndYear,
                     nameTranslations: {
                         upsert: upsertNameData,
                     },
@@ -738,6 +766,22 @@ const main = async () => {
                     },
                 },
             });
+
+            // Update Airtable with the database ID
+            try {
+                await authorsAirtable('Empires & Eras').update(
+                    airtable._airtableReference,
+                    {
+                        ID: existing.id,
+                    },
+                );
+                console.log(`  Updated Airtable ID field: ${existing.id}`);
+            } catch (airtableError) {
+                console.warn(
+                    `  Failed to update Airtable ID for ${airtable.name}:`,
+                    airtableError,
+                );
+            }
 
             const translationsList = Array.from(allTranslations.entries())
                 .map(([locale, { translation }]) => `${locale.toUpperCase()}: ${translation}`)
