@@ -203,6 +203,9 @@ model Empire {
   slug                 String           @unique
   numberOfAuthors      Int              @default(0)
   numberOfBooks        Int              @default(0)
+  transliteration      String?
+  hijriStartYear       Int?
+  hijriEndYear         Int?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime?        @updatedAt
   nameTranslations     EmpireName[]
