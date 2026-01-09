@@ -19,7 +19,7 @@ const translateToAllLocales = async (
     type: 'empire',
     englishName: string,
 ): Promise<Map<string, { translation: string; transliteration: string }>> => {
-    console.log(`  Translating "${englishName}" to all languages in one request...`);
+    console.log(`  Translating "${englishName}" to all languages...`);
 
     // Get all locale codes
     const localeCodes = locales.map(locale => locale.code) as AppLocale[];
@@ -59,7 +59,7 @@ const translateToAllLocales = async (
 const generateOverviewsForAllLocales = async (
     empireName: string,
 ): Promise<Map<string, string>> => {
-    console.log(`  Generating overviews for "${empireName}" in all languages in one request...`);
+    console.log(`  Generating overviews for "${empireName}" in all languages...`);
 
     // Get all locale codes
     const localeCodes = locales.map(locale => locale.code) as AppLocale[];
@@ -82,6 +82,7 @@ const getAirtableEmpires = async () => {
         await authorsAirtable('Empires & Eras').select().all()
     ).map(e => {
         const fields = e.fields;
+        const id = fields['ID'] as string;
         const name = fields['Empire & Era'] as string;
         const arabicName = fields['Arabic Name'] as string;
         const transliteration = fields['Transliteration'] as string | undefined;
@@ -92,6 +93,7 @@ const getAirtableEmpires = async () => {
 
         return {
             _airtableReference: e.id,
+            id: id,
             name: name || '',
             arabicName: arabicName || '',
             transliteration: transliteration || '',
@@ -409,6 +411,7 @@ const main = async () => {
             slug: true,
             numberOfAuthors: true,
             numberOfBooks: true,
+            transliteration: true,
             nameTranslations: {
                 select: {
                     locale: true,
@@ -421,6 +424,7 @@ const main = async () => {
 
     // Create maps for matching
     const existingBySlug = new Map(existingEmpires.map(e => [e.slug, e]));
+    const existingById = new Map(existingEmpires.map(e => [e.id, e]));
     const existingSlugs = new Set(existingEmpires.map(e => e.slug));
 
     // Create a map by English name for matching
@@ -450,8 +454,13 @@ const main = async () => {
             continue;
         }
 
-        // Try to match by English name first (most reliable)
-        let existing = existingByEnglishName.get(airtableEmpire.name);
+        // Try to match by ID first (most reliable)
+        let existing = airtableEmpire.id ? existingById.get(airtableEmpire.id) : undefined;
+
+        // If not found by ID, try to match by English name
+        if (!existing) {
+            existing = existingByEnglishName.get(airtableEmpire.name);
+        }
 
         // If not found by name, try to match by slug
         if (!existing) {
@@ -463,9 +472,12 @@ const main = async () => {
         }
 
         if (existing) {
-            // Check if update is needed (compare English name or counts)
+            // Check if update is needed
             const existingEnglishName = existing.nameTranslations.find(
                 (t: { locale: string; text: string }) => t.locale === 'en',
+            );
+            const existingArabicName = existing.nameTranslations.find(
+                (t: { locale: string; text: string }) => t.locale === 'ar',
             );
             const counts =
                 empireCounts.get(airtableEmpire._airtableReference) || {
@@ -476,11 +488,16 @@ const main = async () => {
             const nameChanged =
                 !existingEnglishName ||
                 existingEnglishName.text !== airtableEmpire.name;
+            const arabicNameChanged =
+                !existingArabicName ||
+                existingArabicName.text !== airtableEmpire.arabicName;
+            const transliterationChanged =
+                existing.transliteration !== airtableEmpire.transliteration;
             const countsChanged =
                 existing.numberOfAuthors !== counts.numberOfAuthors ||
                 existing.numberOfBooks !== counts.numberOfBooks;
 
-            if (nameChanged || countsChanged) {
+            if (nameChanged || arabicNameChanged || transliterationChanged || countsChanged) {
                 toUpdate.push({ airtable: airtableEmpire, existing });
             }
         } else {
@@ -539,14 +556,33 @@ const main = async () => {
     if (toUpdate.length) {
         console.log('\nUpdates:');
         for (const { airtable, existing } of toUpdate) {
-            const existingName = existing.nameTranslations[0]?.text ?? '—';
+            const existingEnglishName = existing.nameTranslations.find(t => t.locale === 'en')?.text ?? '—';
+            const existingArabicName = existing.nameTranslations.find(t => t.locale === 'ar')?.text ?? '—';
             const counts =
                 empireCounts.get(airtable._airtableReference) || {
                     numberOfAuthors: 0,
                     numberOfBooks: 0,
                 };
+
+            const changes: string[] = [];
+            if (existingEnglishName !== airtable.name) {
+                changes.push(`EN: ${existingEnglishName} -> ${airtable.name}`);
+            }
+            if (existingArabicName !== airtable.arabicName) {
+                changes.push(`AR: ${existingArabicName} -> ${airtable.arabicName}`);
+            }
+            if (existing.transliteration !== airtable.transliteration) {
+                changes.push(`Trans: ${existing.transliteration || '(none)'} -> ${airtable.transliteration}`);
+            }
+            if (existing.numberOfAuthors !== counts.numberOfAuthors) {
+                changes.push(`Authors: ${existing.numberOfAuthors} -> ${counts.numberOfAuthors}`);
+            }
+            if (existing.numberOfBooks !== counts.numberOfBooks) {
+                changes.push(`Books: ${existing.numberOfBooks} -> ${counts.numberOfBooks}`);
+            }
+
             console.log(
-                `- ${existingName} -> ${airtable.name} (id: ${existing.id}) [Authors: ${existing.numberOfAuthors} -> ${counts.numberOfAuthors}, Books: ${existing.numberOfBooks} -> ${counts.numberOfBooks}]`,
+                `- ${existingEnglishName} (id: ${existing.id}) [${changes.join(', ')}]`,
             );
         }
     }

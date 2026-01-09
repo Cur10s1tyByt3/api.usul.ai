@@ -7,6 +7,10 @@ export type TypesenseEmpireDocument = {
   names: LocalizedEntry[];
   overviewTranslations: LocalizedEntry[];
 
+  transliteration?: string;
+  hijriStartYear?: number;
+  hijriEndYear?: number;
+
   booksCount: number;
   authorsCount: number;
   _popularity: number;
