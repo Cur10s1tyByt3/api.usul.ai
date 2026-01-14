@@ -4,7 +4,7 @@ import type { LocalizedArrayEntry, LocalizedEntry } from './localized-entry';
 export type TypesenseGlobalSearchDocument = {
   id: string;
   slug: string;
-  type: 'author' | 'book' | 'advancedGenre' | 'genre' | 'region' | 'empire';
+  type: 'author' | 'book' | 'advancedGenre' | 'region' | 'empire';
 
   transliteration?: string;
   primaryNames: LocalizedEntry[];

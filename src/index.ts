@@ -4,7 +4,6 @@ import { env } from './env';
 import { setUptime } from './lib/uptime';
 import { populateAuthors } from './services/author';
 import { populateAdvancedGenres } from './services/advanced-genre';
-import { populateGenres } from './services/genre';
 import { populateBooks } from './services/book';
 import { populateRegions } from './services/region';
 import { populateEmpires } from './services/empire';
@@ -19,13 +18,11 @@ import { langfuseConfig } from './lib/langfuse';
 console.log('🔄 Populating cache...');
 await Promise.all([
   populateAdvancedGenres(),
-  populateGenres(),
   populateRegions(),
   populateEmpires(),
   populateAlternateSlugs(),
 ]);
 console.log('✅ Populated advanced genres');
-console.log('✅ Populated genres');
 console.log('✅ Populated regions');
 console.log('✅ Populated empires');
 console.log('✅ Populated alternate slugs');

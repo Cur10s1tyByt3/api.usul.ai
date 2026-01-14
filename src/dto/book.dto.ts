@@ -1,7 +1,6 @@
 import { PathLocale } from '@/lib/locale';
 import { getPrimaryLocalizedText, getSecondaryLocalizedText } from '@/lib/localization';
 import { getAuthorById } from '@/services/author';
-import { getGenreById } from '@/services/genre';
 import { getAdvancedGenreById } from '@/services/advanced-genre';
 import { Book, BookOtherNames, BookPrimaryName } from '@prisma/client';
 import { getRegionById } from '@/services/region';
@@ -13,7 +12,6 @@ export const makeBookDto = (
   book: Book & {
     primaryNameTranslations: BookPrimaryName[];
     otherNameTranslations: BookOtherNames[];
-    genres: { id: string }[];
     advancedGenres: { id: string }[];
   },
   locale: PathLocale,
@@ -37,7 +35,6 @@ export const makeBookDto = (
     secondaryName: getSecondaryLocalizedText(book.primaryNameTranslations, locale),
     secondaryOtherNames:
       getSecondaryLocalizedText(book.otherNameTranslations, locale) ?? [],
-    genres: book.genres.map(genre => getGenreById(genre.id, locale)!),
     advancedGenres: book.advancedGenres.map(advancedGenre => getAdvancedGenreById(advancedGenre.id, locale)!),
     regions: author.regions.map(region => getRegionById(region.id, locale)!),
     empires: author.empires.map(empire => getEmpireById(empire.id, locale)!),

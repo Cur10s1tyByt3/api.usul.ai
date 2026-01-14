@@ -4,7 +4,6 @@ import {
   commonSearchSchema,
   formatAuthor,
   formatBook,
-  formatGenre,
   formatAdvancedGenre,
   formatResults,
   prepareQuery,
@@ -18,12 +17,9 @@ import {
   AUTHORS_COLLECTION,
   BOOKS_COLLECTION,
   booksQueryWeights,
-  GENRES_COLLECTION,
-  genresQueryWeights,
 } from '@/lib/typesense/collections';
 import { TypesenseAuthorDocument } from '@/types/typesense/author';
 import { TypesenseBookDocument } from '@/types/typesense/book';
-import { TypesenseGenreDocument } from '@/types/typesense/genre';
 import { TypesenseAdvancedGenreDocument } from '@/types/typesense/advanced-genre';
 import { searchBook } from '@/book-search/search';
 import { getBookById } from '@/services/book';
@@ -38,7 +34,7 @@ globalSearchRoutes.get(
 
     const [typesenseResults, keywordResults] = await Promise.all([
       typesense.multiSearch.perform<
-        [TypesenseAuthorDocument, TypesenseBookDocument, TypesenseGenreDocument, TypesenseAdvancedGenreDocument]
+        [TypesenseAuthorDocument, TypesenseBookDocument, TypesenseAdvancedGenreDocument]
       >({
         searches: [
           {
@@ -57,15 +53,6 @@ globalSearchRoutes.get(
             query_by_weights: weightsMapToQueryWeights(booksQueryWeights),
             prioritize_token_position: true,
             limit: 10,
-            page: 1,
-          },
-          {
-            collection: GENRES_COLLECTION.INDEX,
-            q: prepareQuery(q),
-            query_by: Object.values(genresQueryWeights).flat(),
-            query_by_weights: weightsMapToQueryWeights(genresQueryWeights),
-            prioritize_token_position: true,
-            limit: 5,
             page: 1,
           },
           {
@@ -90,8 +77,7 @@ globalSearchRoutes.get(
 
     const authors = typesenseResults.results[0];
     const books = typesenseResults.results[1];
-    const genres = typesenseResults.results[2];
-    const advancedGenre = typesenseResults.results[3];
+    const advancedGenres = typesenseResults.results[2];
 
     return c.json({
       content: {
@@ -126,8 +112,7 @@ globalSearchRoutes.get(
       },
       books: formatResults(books, 'book', book => formatBook(book, locale)),
       authors: formatResults(authors, 'author', author => formatAuthor(author, locale)),
-      genres: formatResults(genres, 'genre', genre => formatGenre(genre, locale)),
-      advancedGenres: formatResults(advancedGenre, 'advancedGenre', advancedGenre => formatAdvancedGenre(advancedGenre, locale)),
+      advancedGenres: formatResults(advancedGenres, 'advancedGenre', advancedGenre => formatAdvancedGenre(advancedGenre, locale)),
     });
   },
 );
