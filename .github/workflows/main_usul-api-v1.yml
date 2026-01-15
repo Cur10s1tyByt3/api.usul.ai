@@ -25,15 +25,15 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: index.docker.io/
-          username: ${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_3C031C26CA014DC4B687077BDF170D59 }}
-          password: ${{ secrets.AZUREAPPSERVICE_CONTAINERPASSWORD_097B849750574BCFA2AD9C929AC4BE3C }}
+          username: ${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_0397BB02A6CA4444A7106BE4E1C18605 }}
+          password: ${{ secrets.AZUREAPPSERVICE_CONTAINERPASSWORD_76D4C998B22C4836A2A30006A85AF4F4 }}
 
       - name: Build and push container image to registry
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          tags: engineeringusul/usul-api:${{ github.sha }}
+          tags: index.docker.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_0397BB02A6CA4444A7106BE4E1C18605 }}/usul-api:${{ github.sha }}
           file: ./Dockerfile
 
   deploy:
@@ -49,9 +49,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_673237029D16429E86DEBBE731AC2869 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A3D0EA6C1D794676AFD4FC9ECD7868FA }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F6761AA44BB74E9697596FB5F2FC3CCC }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_948181717B1B40328973BBC6DA2E3C30 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3762A00059A046DCA6066E84AFE9EA87 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2F9FDD216DA34DEC8028143AF53A1518 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -59,6 +59,5 @@ jobs:
         with:
           app-name: 'usul-api-v1'
           slot-name: 'Production'
-          images: 'index.docker.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_3C031C26CA014DC4B687077BDF170D59 }}/usul-api:${{ github.sha }}'
-
+          images: 'index.docker.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_0397BB02A6CA4444A7106BE4E1C18605 }}/usul-api:${{ github.sha }}'
           
