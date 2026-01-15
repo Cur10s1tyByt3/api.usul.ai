@@ -33,7 +33,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: index.docker.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_3C031C26CA014DC4B687077BDF170D59 }}/usul-api:${{ github.sha }}
+          tags: engineeringusul/usul-api:${{ github.sha }}
           file: ./Dockerfile
 
   deploy:
@@ -60,4 +60,5 @@ jobs:
           app-name: 'usul-api-v1'
           slot-name: 'Production'
           images: 'index.docker.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_3C031C26CA014DC4B687077BDF170D59 }}/usul-api:${{ github.sha }}'
+
           
