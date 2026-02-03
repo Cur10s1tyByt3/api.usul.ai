@@ -436,7 +436,21 @@ export const getAdvancedGenresHierarchy = async (locale: PathLocale = 'en') => {
     parent.children.push(node);
   }
 
-  return roots;
+  // Recursive function to sort each level alphabetically
+  const sortHierarchy = (nodes: TreeNode[]): TreeNode[] => {
+    return nodes
+      .map(node => ({
+        ...node,
+        children: node.children ? sortHierarchy(node.children) : undefined,
+      }))
+      .sort((a, b) => {
+        const nameA = a.primaryName.toLowerCase();
+        const nameB = b.primaryName.toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+  };
+
+  return sortHierarchy(roots);
 }
 
 const get = () =>
