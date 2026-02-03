@@ -1,5 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import {
   commonSearchSchema,
   formatPagination,
@@ -34,35 +35,56 @@ empireSearchRoutes.get(
     }),
   ),
   async c => {
-    const { q, limit, page, sortBy, locale } = c.req.valid('query');
+    try {
+      const { q, limit, page, sortBy, locale } = c.req.valid('query');
 
-    const results = await typesense
-      .collections<TypesenseEmpireDocument>(EMPIRES_COLLECTION.INDEX)
-      .documents()
-      .search({
-        q: prepareQuery(q),
-        query_by: Object.values(empiresQueryWeights).flat(),
-        query_by_weights: weightsMapToQueryWeights(empiresQueryWeights),
-        prioritize_token_position: true,
-        limit,
-        page,
-        ...(sortBy &&
-          sortBy !== 'relevance' && {
-          sort_by: {
-            'texts-asc': 'booksCount:asc',
-            'texts-desc': 'booksCount:desc',
-            'authors-asc': 'authorsCount:asc',
-            'authors-desc': 'authorsCount:desc',
-            'alphabetical-asc': 'names.text:asc',
-            'alphabetical-desc': 'names.text:desc',
-          }[sortBy],
-        }),
+      const results = await typesense
+        .collections<TypesenseEmpireDocument>(EMPIRES_COLLECTION.INDEX)
+        .documents()
+        .search({
+          q: prepareQuery(q),
+          query_by: Object.values(empiresQueryWeights).flat(),
+          query_by_weights: weightsMapToQueryWeights(empiresQueryWeights),
+          prioritize_token_position: true,
+          limit,
+          page,
+          ...(sortBy &&
+            sortBy !== 'relevance' && {
+            sort_by: {
+              'texts-asc': 'booksCount:asc',
+              'texts-desc': 'booksCount:desc',
+              'authors-asc': 'authorsCount:asc',
+              'authors-desc': 'authorsCount:desc',
+              'alphabetical-asc': 'transliteration:asc',
+              'alphabetical-desc': 'transliteration:desc',
+            }[sortBy],
+          }),
+        });
+
+      return c.json({
+        results: formatResults(results, 'empire', empire => formatEmpire(empire, locale)),
+        pagination: formatPagination(results.found, results.page, limit),
       });
-
-    return c.json({
-      results: formatResults(results, 'empire', empire => formatEmpire(empire, locale)),
-      pagination: formatPagination(results.found, results.page, limit),
-    });
+    } catch (error: any) {
+      console.error('Error searching empires:', error);
+      
+      // Handle Typesense collection not found error
+      if (error?.httpStatus === 404 || error?.message?.includes('not found')) {
+        throw new HTTPException(404, {
+          message: `Empires collection not found. Please ensure the '${EMPIRES_COLLECTION.INDEX}' collection exists in Typesense.`,
+        });
+      }
+      
+      // Handle Typesense connection errors
+      if (error?.message?.includes('ECONNREFUSED') || error?.message?.includes('ENOTFOUND')) {
+        throw new HTTPException(503, {
+          message: 'Typesense service unavailable. Please check the Typesense server connection.',
+        });
+      }
+      
+      // Re-throw other errors to be handled by the global error handler
+      throw error;
+    }
   },
 );
 
