@@ -1,6 +1,5 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import {
   commonSearchSchema,
   formatPagination,
@@ -67,23 +66,15 @@ empireSearchRoutes.get(
       });
     } catch (error: any) {
       console.error('Error searching empires:', error);
-      
-      // Handle Typesense collection not found error
-      if (error?.httpStatus === 404 || error?.message?.includes('not found')) {
-        throw new HTTPException(404, {
-          message: `Empires collection not found. Please ensure the '${EMPIRES_COLLECTION.INDEX}' collection exists in Typesense.`,
-        });
-      }
-      
-      // Handle Typesense connection errors
-      if (error?.message?.includes('ECONNREFUSED') || error?.message?.includes('ENOTFOUND')) {
-        throw new HTTPException(503, {
-          message: 'Typesense service unavailable. Please check the Typesense server connection.',
-        });
-      }
-      
-      // Re-throw other errors to be handled by the global error handler
-      throw error;
+      // Return 200 with empty results so we never crash (avoid 502) and frontend never gets null
+      return c.json({
+        results: formatResults(
+          { found: 0, page: 1, hits: [] } as any,
+          'empire',
+          () => ({}),
+        ),
+        pagination: formatPagination(0, 1, 20),
+      });
     }
   },
 );
