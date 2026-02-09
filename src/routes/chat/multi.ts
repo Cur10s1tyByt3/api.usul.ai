@@ -17,6 +17,12 @@ import { rerankChunks } from '@/lib/cohere';
 import { writeSourcesToStream } from '@/chat/utils';
 import { condenseMessageHistory } from '@/chat/condense-chat';
 import { detectLanguage } from '@/chat/detect-language';
+import {
+  getCachedResponse,
+  setCachedResponse,
+} from '@/lib/example-query-cache';
+import { isExampleQuery } from '@/lib/example-queries';
+import { createCachedTextStream } from '@/lib/stream-cached-text';
 
 const multiChatRoutes = new Hono();
 
@@ -83,6 +89,56 @@ multiChatRoutes.post(
       execute: async writer => {
         // pass traceId to frontend to be able to give feedback (thumbs up/down)
         writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
+
+        // Check if this is an example query and if we have a cached response
+        // Skip cache if this is a retry/regeneration
+        try {
+          const cachedResponse =
+            !body.isRetry
+              ? await getCachedResponse(lastMessage, locale)
+              : null;
+
+          if (cachedResponse) {
+            // Stream cached response
+            writer.writeMessageAnnotation({
+              type: 'STATUS',
+              value: 'searching',
+              queries: cachedResponse.queries,
+            });
+
+            writer.writeMessageAnnotation({
+              type: 'STATUS',
+              value: 'generating-response',
+            });
+
+            // Create a streamText-like result from cached text and merge it
+            try {
+              const cachedStream = createCachedTextStream(cachedResponse.text);
+              // Await the merge to ensure all text is streamed before continuing
+              await cachedStream.mergeIntoDataStream(writer);
+
+              // Get book details from cached sources
+              const sourcesBooks = [
+                ...new Set(
+                  cachedResponse.sources.map(source => source.node.metadata.bookId),
+                ),
+              ]
+                .map(bookId => getBookById(bookId, locale))
+                .filter(Boolean) as BookDto[];
+
+              writeSourcesToStream(writer, cachedResponse.sources, sourcesBooks);
+              return;
+            } catch (streamError) {
+              console.error('Error streaming cached response, falling back to normal flow:', streamError);
+              // Fall through to normal flow if streaming fails
+            }
+          }
+        } catch (cacheError) {
+          console.error('Error checking cache, falling back to normal flow:', cacheError);
+          // Fall through to normal flow if cache check fails
+        }
+
+        // Normal flow for non-cached queries
         writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
 
         const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId });
@@ -133,6 +189,8 @@ multiChatRoutes.post(
           sessionId,
           language: queryLanguage,
         });
+
+        // Stream the result
         result.mergeIntoDataStream(writer);
 
         // if there are books specified in filters, use them to get book details, otherwise use sources to get book details
@@ -140,10 +198,41 @@ multiChatRoutes.post(
           books.length > 0
             ? books
             : ([...new Set(sources.map(source => source.node.metadata.bookId))]
-                .map(bookId => getBookById(bookId, locale))
-                .filter(Boolean) as BookDto[]);
+              .map(bookId => getBookById(bookId, locale))
+              .filter(Boolean) as BookDto[]);
 
         writeSourcesToStream(writer, sources, sourcesBooks);
+
+        // Cache the response if this is an example query
+        // We need to wait for the stream to complete before caching
+        const isExample = isExampleQuery(lastMessage, locale);
+        if (isExample) {
+          // Get the full text from the result (this will wait for streaming to complete)
+          try {
+            const fullText = await result.text;
+
+            if (fullText) {
+              // Cache in the background - don't block the response if caching fails
+              await setCachedResponse(
+                lastMessage,
+                locale,
+                {
+                  text: fullText,
+                  sources,
+                  queries,
+                  language: queryLanguage,
+                },
+              );
+            }
+          } catch (error) {
+            console.error('Failed to cache example query response:', error);
+            console.error('Error details:', {
+              locale,
+              query: lastMessage.substring(0, 50),
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
       },
       onError: error => {
         console.log(error);
