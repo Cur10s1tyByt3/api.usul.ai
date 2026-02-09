@@ -27,7 +27,10 @@ function loadBooksDetails(
     (acc, b) => {
       const book = getBookById(b.id);
 
-      if (!book) return acc;
+      if (!book) {
+        console.warn(`[v1/search] Book not found: ${b.id}`);
+        return acc;
+      }
 
       const version = book.versions.find(v =>
         b.versionId
@@ -37,7 +40,17 @@ function loadBooksDetails(
             : v.keywordSupported,
       );
 
-      if (!version) return acc;
+      if (!version) {
+        console.warn(
+          `[v1/search] Version not found for book ${b.id}. Looking for versionId: ${b.versionId}, type: ${type}. Available versions:`,
+          book.versions.map(v => ({
+            id: v.id,
+            aiSupported: v.aiSupported,
+            keywordSupported: v.keywordSupported,
+          })),
+        );
+        return acc;
+      }
 
       acc[b.id] = {
         ...book,
@@ -72,7 +85,21 @@ async function search(
   const { q: query, limit, page } = params;
 
   let detailsResult: ReturnType<typeof loadBooksDetails> | undefined;
-  if (books) detailsResult = loadBooksDetails(books, type);
+  if (books) {
+    detailsResult = loadBooksDetails(books, type);
+    // If we're searching for specific books but none were found, return empty results
+    if (Object.keys(detailsResult.bookDetails).length === 0) {
+      return {
+        total: 0,
+        totalPages: 0,
+        perPage: limit,
+        currentPage: page,
+        hasNextPage: false,
+        hasPreviousPage: false,
+        results: [],
+      };
+    }
+  }
 
   const results = await searchBook({
     books: detailsResult ? detailsResult.booksToSearch : undefined,
