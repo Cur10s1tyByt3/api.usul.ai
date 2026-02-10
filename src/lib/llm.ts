@@ -14,7 +14,7 @@ const azure = createAzure({
   apiVersion: '2025-01-01-preview',
 });
 
-export const model = azure.languageModel(env.AZURE_4_1_DEPLOYMENT);
+export const model = azure.languageModel(env.AZURE_BASE_DEPLOYMENT);
 export const miniModel = azure.languageModel('usul-gpt-5-mini');
 
 export type LangfuseTracingOptions = {

@@ -31,7 +31,7 @@ export const env = createEnv({
 
     AZURE_ENDPOINT_URL: z.string().url(),
     AZURE_SECRET_KEY: z.string(),
-    AZURE_4_1_DEPLOYMENT: z.string(),
+    AZURE_BASE_DEPLOYMENT: z.string(),
 
     AZURE_SEARCH_ENDPOINT: z.string().url(),
     AZURE_SEARCH_KEY: z.string(),

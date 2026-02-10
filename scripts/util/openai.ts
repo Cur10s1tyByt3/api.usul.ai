@@ -8,10 +8,10 @@ import { z } from 'zod';
 if (
   !process.env.AZURE_ENDPOINT_URL ||
   !process.env.AZURE_SECRET_KEY ||
-  !process.env.AZURE_4_1_DEPLOYMENT
+  !process.env.AZURE_BASE_DEPLOYMENT
 ) {
   throw new Error(
-    'AZURE_ENDPOINT_URL, AZURE_SECRET_KEY and AZURE_4_1_DEPLOYMENT are not set',
+    'AZURE_ENDPOINT_URL, AZURE_SECRET_KEY and AZURE_BASE_DEPLOYMENT are not set',
   );
 }
 
@@ -21,7 +21,7 @@ const azure = createAzure({
   apiVersion: '2025-01-01-preview',
 });
 
-export const model = azure.languageModel(process.env.AZURE_4_1_DEPLOYMENT);
+export const model = azure.languageModel(process.env.AZURE_BASE_DEPLOYMENT);
 
 type Type = 'genre' | 'region' | 'empire';
 
