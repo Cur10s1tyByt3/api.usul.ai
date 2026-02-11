@@ -28,23 +28,23 @@ export async function answerBookQuery({
     versions: book.versions
       .map(v => `  * Value: ${v.value}, Source: ${v.source}`)
       .join('\n'),
-    genres: book.genres
+    genres: book.advancedGenres
       .map(g => `  * Name: ${g.name}, Secondary Name: ${g.secondaryName}`)
       .join('\n'),
     tableOfContent: bookDetails.headings
       ? (
-          truncateHeadings(bookDetails.headings) as (
-            | { volume?: number; page?: number; title: string; level: number }
-            | { page?: { vol: string; page: number }; title: string; level: number }
-          )[]
-        )
-          .map((h, idx) => `${idx + 1}. ${h.title}`)
-          .join('\n')
+        truncateHeadings(bookDetails.headings) as (
+          | { volume?: number; page?: number; title: string; level: number }
+          | { page?: { vol: string; page: number }; title: string; level: number }
+        )[]
+      )
+        .map((h, idx) => `${idx + 1}. ${h.title}`)
+        .join('\n')
       : '-',
   });
 
   const response = streamText({
-    temperature: 0.5,
+    temperature: process.env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' ? 1 : 0.5,
     system: compiledPrompt,
     messages: [...history, { role: 'user', content: query }],
     langfuse: {
