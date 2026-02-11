@@ -24,7 +24,7 @@ export async function condenseMessageHistory({
 
   const response = await generateText({
     messages: compiledPrompt as CoreMessage[],
-    temperature: process.env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' ? 1 : isRetry ? 0.3 : 0,
+    temperature: isRetry ? 0.3 : 0,
     langfuse: {
       name: `Chat.OpenAI.RAG.Condense${isRetry ? '.Retry' : ''}`,
       sessionId,

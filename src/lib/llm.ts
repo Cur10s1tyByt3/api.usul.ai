@@ -54,6 +54,18 @@ export const streamText = <
   return baseStreamText({
     model: modelName === 'mini' ? miniModel : model,
     ...params,
+    // usul-gpt-5.1-chat only supports temperature 1.
+    // Minimize reasoning tokens via reasoningEffort: 'none'.
+    ...(env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' && {
+      temperature: 1,
+      providerOptions: {
+        ...params.providerOptions,
+        azure: {
+          reasoningEffort: 'none' as const,
+          ...(params.providerOptions as { azure?: { reasoningEffort?: string } } | undefined)?.azure,
+        },
+      },
+    }),
     experimental_transform: smoothStream(),
     ...getLangfuseArgs(langfuse),
   });
@@ -77,6 +89,18 @@ export const generateText = <
   return baseGenerateText({
     model: modelName === 'mini' ? miniModel : model,
     ...params,
+    // usul-gpt-5.1-chat only supports temperature 1.
+    // Minimize reasoning tokens via reasoningEffort: 'none'.
+    ...(env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' && {
+      temperature: 1,
+      providerOptions: {
+        ...params.providerOptions,
+        azure: {
+          reasoningEffort: 'none' as const,
+          ...(params.providerOptions as { azure?: { reasoningEffort?: string } } | undefined)?.azure,
+        },
+      },
+    }),
     ...getLangfuseArgs(langfuse),
   });
 };

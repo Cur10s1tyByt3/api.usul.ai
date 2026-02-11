@@ -33,7 +33,7 @@ export async function answerRagQuery({
   const compiledPrompt = prompt.compile({ language });
 
   const response = streamText({
-    temperature: process.env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' ? 1 : isRetry ? 0.5 : 0,
+    temperature: isRetry ? 0.5 : 0,
     system: compiledPrompt,
     messages: [
       ...history,
@@ -82,7 +82,7 @@ export async function answerMultiBookRagQuery({
   const compiledPrompt = prompt.compile({ language });
 
   const response = streamText({
-    temperature: process.env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' ? 1 : isRetry ? 0.5 : 0,
+    temperature: isRetry ? 0.5 : 0,
     system: compiledPrompt,
     messages: [
       ...history,

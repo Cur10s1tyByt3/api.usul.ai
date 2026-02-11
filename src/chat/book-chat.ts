@@ -44,7 +44,7 @@ export async function answerBookQuery({
   });
 
   const response = streamText({
-    temperature: process.env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' ? 1 : 0.5,
+    temperature: 0.5,
     system: compiledPrompt,
     messages: [...history, { role: 'user', content: query }],
     langfuse: {
