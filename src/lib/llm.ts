@@ -55,13 +55,13 @@ export const streamText = <
     model: modelName === 'mini' ? miniModel : model,
     ...params,
     // usul-gpt-5.1-chat only supports temperature 1.
-    // Minimize reasoning tokens via reasoningEffort: 'none'.
+    // Minimize reasoning tokens. Azure only supports 'low' | 'medium' | 'high' (no 'none').
     ...(env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' && {
       temperature: 1,
       providerOptions: {
         ...params.providerOptions,
         azure: {
-          reasoningEffort: 'none' as const,
+          reasoningEffort: 'low' as const,
           ...(params.providerOptions as { azure?: { reasoningEffort?: string } } | undefined)?.azure,
         },
       },
@@ -90,13 +90,13 @@ export const generateText = <
     model: modelName === 'mini' ? miniModel : model,
     ...params,
     // usul-gpt-5.1-chat only supports temperature 1.
-    // Minimize reasoning tokens via reasoningEffort: 'none'.
+    // Minimize reasoning tokens. Azure only supports 'low' | 'medium' | 'high' (no 'none').
     ...(env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' && {
       temperature: 1,
       providerOptions: {
         ...params.providerOptions,
         azure: {
-          reasoningEffort: 'none' as const,
+          reasoningEffort: 'low' as const,
           ...(params.providerOptions as { azure?: { reasoningEffort?: string } } | undefined)?.azure,
         },
       },
