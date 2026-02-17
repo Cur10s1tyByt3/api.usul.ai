@@ -11,10 +11,10 @@ const normalizeQuery = (query: string): string => {
  */
 const getQueryLocale = (query: string): string | null => {
   const normalized = normalizeQuery(query);
-  
+
   for (const [locale, queries] of Object.entries(EXAMPLE_QUERIES)) {
     if (!queries) continue;
-    
+
     const isMatch = Object.values(queries).some(
       (exampleQuery: { shortText: string; longText: string }) =>
         normalizeQuery(exampleQuery.longText) === normalized,
@@ -23,7 +23,7 @@ const getQueryLocale = (query: string): string | null => {
       return locale;
     }
   }
-  
+
   return null;
 };
 
@@ -47,7 +47,6 @@ export const getCachedResponse = async (
 ): Promise<CachedResponse | null> => {
   const isExample = isExampleQuery(query, locale);
   if (!isExample) {
-    console.log(`Query is not an example query for locale: ${locale}, query: ${query.substring(0, 50)}...`);
     return null;
   }
 
@@ -55,10 +54,8 @@ export const getCachedResponse = async (
   const cacheKey = getCacheKey(query, locale);
 
   try {
-    console.log(`Checking cache for locale: ${locale}, key: ${cacheKey}`);
     const cached = await redis.get(cacheKey);
     if (!cached) {
-      console.log(`No cache found for locale: ${locale}`);
       return null;
     }
 

@@ -23,11 +23,14 @@ import {
 } from '@/lib/example-query-cache';
 import { isExampleQuery } from '@/lib/example-queries';
 import { createCachedTextStream } from '@/lib/stream-cached-text';
+import { checkAndIncrementChatLimit } from '../../lib/chat-limit';
+import { optionalAuth } from '@/middlewares/auth';
 
 const multiChatRoutes = new Hono();
 
 multiChatRoutes.post(
   '/multi',
+  optionalAuth,
   zValidator(
     'query',
     z.object({
@@ -48,6 +51,17 @@ multiChatRoutes.post(
   async c => {
     const body = c.req.valid('json');
     const { locale } = c.req.valid('query');
+
+    // Skip IP-based limit for signed-in users; only enforce it for anonymous users
+    if (!c.var.session) {
+      const limitResult = await checkAndIncrementChatLimit(c);
+      if (!limitResult.allowed) {
+        return c.json(
+          { code: limitResult.code, message: limitResult.message },
+          403,
+        );
+      }
+    }
 
     const traceId = uuidv4();
     const sessionId = body.chatId ?? uuidv4();
