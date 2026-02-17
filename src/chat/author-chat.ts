@@ -9,12 +9,14 @@ export async function answerAuthorQuery({
   query,
   traceId,
   sessionId,
+  userId,
 }: {
   author: BookDetailsResponse['book']['author'];
   history: CoreMessage[];
   query: string;
   traceId: string;
   sessionId: string;
+  userId?: string;
 }) {
   const prompt = await langfuse.getPrompt('non-rag.author');
 
@@ -42,6 +44,7 @@ export async function answerAuthorQuery({
       name: 'Chat.OpenAI.NonRAG.Author',
       sessionId,
       traceId: traceId,
+      userId,
       prompt,
     },
   });

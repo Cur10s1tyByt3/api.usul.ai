@@ -65,6 +65,7 @@ multiChatRoutes.post(
 
     const traceId = uuidv4();
     const sessionId = body.chatId ?? uuidv4();
+    const userId = c.var.session?.user?.id;
 
     const lastMessage = body.messages[body.messages.length - 1].content;
     const messages = body.messages.slice(0, body.messages.length - 1);
@@ -155,9 +156,9 @@ multiChatRoutes.post(
         // Normal flow for non-cached queries
         writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
 
-        const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId });
+        const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
         const queries = (
-          await generateQueries({ chatHistory: body.messages, sessionId })
+          await generateQueries({ chatHistory: body.messages, sessionId, userId })
         ).map(q => q.query);
 
         writer.writeMessageAnnotation({
@@ -180,6 +181,7 @@ multiChatRoutes.post(
               query: lastMessage,
               isRetry: body.isRetry,
               sessionId,
+              userId,
             });
           })(),
         ]);
@@ -202,6 +204,7 @@ multiChatRoutes.post(
           traceId,
           sessionId,
           language: queryLanguage,
+          userId,
         });
 
         // Stream the result

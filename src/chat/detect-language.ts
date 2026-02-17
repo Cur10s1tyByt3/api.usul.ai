@@ -16,9 +16,11 @@ const schema = z.object({
 export async function detectLanguage({
   query,
   sessionId,
+  userId,
 }: {
   query: string;
   sessionId: string;
+  userId?: string;
 }) {
   const prompt = await langfuse.getPrompt('detect-language');
   const compiledPrompt = prompt.compile();
@@ -33,6 +35,7 @@ export async function detectLanguage({
       ...getLangfuseArgs({
         name: `Chat.OpenAI.DetectLanguage`,
         sessionId,
+        userId,
         prompt,
       }),
       providerOptions: {

@@ -6,6 +6,7 @@ export async function routeQuery(
   history: CoreMessage[],
   query: string,
   sessionId: string,
+  userId?: string,
 ) {
   const prompt = await langfuse.getPrompt('router');
   const compiledPrompt = prompt.compile();
@@ -24,6 +25,7 @@ export async function routeQuery(
     ...getLangfuseArgs({
       name: 'Chat.OpenAI.Router', // Trace name
       sessionId,
+      userId,
       prompt,
     }),
   });

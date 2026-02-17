@@ -17,6 +17,7 @@ import { writeSourcesToStream } from '@/chat/utils';
 import { generateQueries } from '@/chat/generate-queries';
 import { rerankChunks } from '@/lib/cohere';
 import { detectLanguage } from '@/chat/detect-language';
+import { optionalAuth } from '@/middlewares/auth';
 
 const singleChatRoutes = new Hono();
 
@@ -41,6 +42,7 @@ const getStreamResult = async (
 
 singleChatRoutes.post(
   '/:bookId/:versionId',
+  optionalAuth,
   zValidator(
     'json',
     z.object({
@@ -53,6 +55,7 @@ singleChatRoutes.post(
     const body = c.req.valid('json');
     const traceId = uuidv4();
     const sessionId = body.chatId ?? uuidv4();
+    const userId = c.var.session?.user?.id;
 
     const bookId = c.req.param('bookId');
     const versionId = c.req.param('versionId');
@@ -72,7 +75,7 @@ singleChatRoutes.post(
       throw new Error('Version not found');
     }
 
-    const routerResult = await routeQuery(chatHistory, lastMessage, sessionId);
+    const routerResult = await routeQuery(chatHistory, lastMessage, sessionId, userId);
     if (routerResult === 'author') {
       const streamResult = await answerAuthorQuery({
         author: bookDetails.book.author,
@@ -80,6 +83,7 @@ singleChatRoutes.post(
         query: lastMessage,
         traceId,
         sessionId,
+        userId,
       });
       return getStreamResult(c, traceId, streamResult);
     }
@@ -91,6 +95,7 @@ singleChatRoutes.post(
         query: lastMessage,
         traceId,
         sessionId,
+        userId,
       });
       return getStreamResult(c, traceId, streamResult);
     }
@@ -101,9 +106,9 @@ singleChatRoutes.post(
         writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
         writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
 
-        const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId });
+        const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
         const queries = (
-          await generateQueries({ chatHistory: body.messages, sessionId })
+          await generateQueries({ chatHistory: body.messages, sessionId, userId })
         ).map(q => q.query);
 
         writer.writeMessageAnnotation({
@@ -131,6 +136,7 @@ singleChatRoutes.post(
               query: lastMessage,
               isRetry: body.isRetry,
               sessionId,
+              userId,
             });
           })(),
         ]);
@@ -154,6 +160,7 @@ singleChatRoutes.post(
           traceId,
           sessionId,
           language: queryLanguage,
+          userId,
         });
         result.mergeIntoDataStream(writer);
 

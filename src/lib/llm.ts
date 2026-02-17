@@ -21,6 +21,7 @@ export type LangfuseTracingOptions = {
   name?: string;
   sessionId?: string;
   traceId?: string;
+  userId?: string;
   prompt?: ChatPromptClient | TextPromptClient;
 };
 
@@ -28,6 +29,8 @@ export const getLangfuseArgs = (args?: LangfuseTracingOptions) => ({
   experimental_telemetry: {
     isEnabled: true,
     ...(args?.name && { functionId: args.name }),
+    ...(args?.sessionId && { sessionId: args.sessionId }),
+    ...(args?.userId && { userId: args.userId }),
     metadata: {
       ...(args?.sessionId && { sessionId: args.sessionId }),
       ...(args?.traceId && { langfuseTraceId: args.traceId }),

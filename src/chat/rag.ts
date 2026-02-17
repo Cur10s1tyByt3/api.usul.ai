@@ -15,6 +15,7 @@ export async function answerRagQuery({
   traceId,
   sessionId,
   language,
+  userId,
 }: {
   isRetry?: boolean;
   bookDetails: BookDetailsResponse;
@@ -24,6 +25,7 @@ export async function answerRagQuery({
   traceId: string;
   sessionId: string;
   language: string;
+  userId?: string;
 }) {
   const prompt = await langfuse.getPrompt('rag');
 
@@ -54,6 +56,7 @@ User's query: "${query}"
       name: `Chat.OpenAI.RAG${isRetry ? '.Retry' : ''}`,
       sessionId,
       traceId,
+      userId,
       prompt,
     },
   });
@@ -69,6 +72,7 @@ export async function answerMultiBookRagQuery({
   traceId,
   sessionId,
   language,
+  userId,
 }: {
   isRetry?: boolean;
   history: CoreMessage[];
@@ -77,6 +81,7 @@ export async function answerMultiBookRagQuery({
   traceId: string;
   sessionId: string;
   language: string;
+  userId?: string;
 }) {
   const prompt = await langfuse.getPrompt('multi-rag');
   const compiledPrompt = prompt.compile({ language });
@@ -103,6 +108,7 @@ User's query: "${query}"
       name: `Chat.OpenAI.MultiBookRAG${isRetry ? '.Retry' : ''}`,
       sessionId,
       traceId,
+      userId,
       prompt,
     },
   });

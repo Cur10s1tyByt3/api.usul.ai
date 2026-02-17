@@ -7,11 +7,13 @@ export async function condenseMessageHistory({
   query,
   isRetry,
   sessionId,
+  userId,
 }: {
   chatHistory: CoreMessage[];
   query: string;
   isRetry?: boolean;
   sessionId: string;
+  userId?: string;
 }) {
   const prompt = await langfuse.getPrompt('rag.condense', undefined, { type: 'chat' });
 
@@ -28,6 +30,7 @@ export async function condenseMessageHistory({
     langfuse: {
       name: `Chat.OpenAI.RAG.Condense${isRetry ? '.Retry' : ''}`,
       sessionId,
+      userId,
       prompt,
     },
   });

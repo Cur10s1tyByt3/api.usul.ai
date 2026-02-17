@@ -16,9 +16,11 @@ const schema = z.object({
 export async function generateQueries({
   chatHistory,
   sessionId,
+  userId,
 }: {
   chatHistory: CoreMessage[];
   sessionId: string;
+  userId?: string;
 }) {
   const prompt = await langfuse.getPrompt('generate-queries');
   const compiledPrompt = prompt.compile();
@@ -33,6 +35,7 @@ ${formatChatHistory(chatHistory)}
     langfuse: {
       name: `Chat.OpenAI.GenerateQueries`,
       sessionId,
+      userId,
       prompt,
     },
   });

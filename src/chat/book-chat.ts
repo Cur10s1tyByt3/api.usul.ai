@@ -10,12 +10,14 @@ export async function answerBookQuery({
   query,
   traceId,
   sessionId,
+  userId,
 }: {
   bookDetails: BookDetailsResponse;
   history: CoreMessage[];
   query: string;
   traceId: string;
   sessionId: string;
+  userId?: string;
 }) {
   const prompt = await langfuse.getPrompt('non-rag.book');
 
@@ -51,6 +53,7 @@ export async function answerBookQuery({
       name: 'Chat.OpenAI.NonRAG.Book',
       sessionId,
       traceId,
+      userId,
       prompt,
     },
   });
