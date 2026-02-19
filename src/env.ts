@@ -36,6 +36,7 @@ export const env = createEnv({
     AZURE_SEARCH_ENDPOINT: z.string().url(),
     AZURE_SEARCH_KEY: z.string(),
     AZURE_VECTOR_SEARCH_INDEX: z.string(),
+    AZURE_VECTOR_SEARCH_INDEXES: z.string().optional(),
     AZURE_KEYWORD_SEARCH_INDEX: z.string(),
 
     LANGFUSE_SECRET_KEY: z.string(),

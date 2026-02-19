@@ -4,7 +4,7 @@ import { chunk } from '@/lib/utils';
 import _uploadedVersions from '../../src/book-fetchers/uploaded-versions.json';
 import fs from 'fs/promises';
 import path from 'path';
-import { vectorSearchClient, keywordSearchClient } from '@/book-search/client';
+import { vectorSearchClients, keywordSearchClient } from '@/book-search/client';
 import { odata } from '@azure/search-documents';
 
 const uploadedVersions = _uploadedVersions as Record<string, boolean>;
@@ -71,10 +71,10 @@ const main = async () => {
         return ids;
       };
 
-      const [keywordIds, vectorIds] = await Promise.all([
-        collectIds(keywordSearchClient),
-        collectIds(vectorSearchClient),
-      ]);
+      const keywordIds = await collectIds(keywordSearchClient);
+      const vectorIdsByIndex = await Promise.all(
+        vectorSearchClients.map((client) => collectIds(client)),
+      );
 
       const deleteInChunks = async (client: any, ids: string[]) => {
         if (!ids.length) return;
@@ -85,7 +85,9 @@ const main = async () => {
 
       await Promise.all([
         deleteInChunks(keywordSearchClient, keywordIds),
-        deleteInChunks(vectorSearchClient, vectorIds),
+        ...vectorSearchClients.map((client, i) =>
+          deleteInChunks(client, vectorIdsByIndex[i] ?? []),
+        ),
       ]);
     } catch (err) {
       console.error('Failed to delete from search indices', err);

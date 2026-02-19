@@ -6,18 +6,26 @@ import {
   SelectFields,
 } from '@azure/search-documents';
 
-import { vectorSearchClient, keywordSearchClient } from './client';
+import { vectorSearchClients, keywordSearchClient } from './client';
 import { KeywordSearchBookChunk, VectorSearchBookChunk } from '@/types/search';
 import { rerankChunks } from '@/lib/cohere';
 
 async function asyncIterableToArray<T extends object>(
-  iterable: SearchIterator<T, SelectFields<T>>,
+  iterable:
+    | SearchIterator<T, SelectFields<T>>
+    | AsyncIterable<SearchResult<T, SelectFields<T>>>,
 ) {
   const results: SearchResult<T, SelectFields<T>>[] = [];
   for await (const result of iterable) {
     results.push(result);
   }
   return results;
+}
+
+async function* arrayToAsyncIterable<T>(arr: T[]): AsyncIterable<T> {
+  for (const item of arr) {
+    yield item;
+  }
 }
 
 interface SearchParams {
@@ -64,13 +72,11 @@ export async function searchBook({
     }
   }
 
-  let results: SearchDocumentsResult<
-    KeywordSearchBookChunk | VectorSearchBookChunk,
-    SelectFields<KeywordSearchBookChunk | VectorSearchBookChunk>
-  >;
+  let total: number;
+  let formattedResults: Awaited<ReturnType<typeof formatResults>>;
 
   if (type === 'text') {
-    results = await keywordSearchClient.search(query, {
+    const results = await keywordSearchClient.search(query, {
       filter,
       top: limit,
       queryType: 'full',
@@ -80,33 +86,69 @@ export async function searchBook({
       includeTotalCount: true,
       highlightFields: 'content',
     });
+    total = results.count!;
+    formattedResults = await formatResults(results.results);
   } else {
-    // vector search
-    results = await vectorSearchClient.search(undefined, {
-      filter,
-      top: limit,
-      skip: (page - 1) * limit,
-      includeTotalCount: true,
-      vectorSearchOptions: {
-        queries: [
-          {
-            kind: 'text',
-            fields: ['chunk_embedding'],
-            text: query,
+    // vector search - query all indexes in parallel and merge results
+    const skip = (page - 1) * limit;
+    const topPerIndex = skip + limit;
+
+    const searchResultsList = await Promise.all(
+      vectorSearchClients.map((client) =>
+        client.search(undefined, {
+          filter,
+          top: topPerIndex,
+          skip: 0,
+          includeTotalCount: true,
+          vectorSearchOptions: {
+            queries: [
+              {
+                kind: 'text',
+                fields: ['chunk_embedding'],
+                text: query,
+              },
+            ],
           },
-        ],
-      },
+        }),
+      ),
+    );
+
+    const mergedArrays = await Promise.all(
+      searchResultsList.map((r) => asyncIterableToArray(r.results)),
+    );
+    const mergedResults = mergedArrays.flat();
+
+    const idToResult = new Map<
+      string,
+      SearchResult<
+        KeywordSearchBookChunk | VectorSearchBookChunk,
+        SelectFields<KeywordSearchBookChunk | VectorSearchBookChunk>
+      >
+    >();
+    for (const r of mergedResults) {
+      const existing = idToResult.get(r.document.id);
+      if (!existing || (r.score ?? 0) > (existing.score ?? 0)) {
+        idToResult.set(r.document.id, r);
+      }
+    }
+
+    const sortedByScore = [...idToResult.values()].sort(
+      (a, b) => (b.score ?? 0) - (a.score ?? 0),
+    );
+    const paginatedResults = sortedByScore.slice(skip, skip + limit);
+    total = sortedByScore.length;
+    formattedResults = await formatResults(
+      arrayToAsyncIterable(paginatedResults),
+    );
+  }
+
+  if (rerank) {
+    formattedResults = await rerankChunks(query, formattedResults, {
+      topK: rerankLimit,
     });
   }
 
-  const total = results.count!;
   const totalPages = Math.ceil(total / limit);
-
-  let formattedResults = await formatResults(results.results);
-  if (rerank) {
-    formattedResults = await rerankChunks(query, formattedResults, { topK: rerankLimit });
-  }
-
   return {
     total,
     totalPages,
@@ -119,10 +161,17 @@ export async function searchBook({
 }
 
 const formatResults = async (
-  results: SearchIterator<
-    KeywordSearchBookChunk | VectorSearchBookChunk,
-    SelectFields<KeywordSearchBookChunk | VectorSearchBookChunk>
-  >,
+  results:
+    | SearchIterator<
+        KeywordSearchBookChunk | VectorSearchBookChunk,
+        SelectFields<KeywordSearchBookChunk | VectorSearchBookChunk>
+      >
+    | AsyncIterable<
+        SearchResult<
+          KeywordSearchBookChunk | VectorSearchBookChunk,
+          SelectFields<KeywordSearchBookChunk | VectorSearchBookChunk>
+        >
+      >,
 ) => {
   return (await asyncIterableToArray(results)).map(r => {
     if ('chunk_content' in r.document) {
