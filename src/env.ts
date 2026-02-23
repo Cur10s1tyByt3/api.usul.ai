@@ -41,6 +41,7 @@ export const env = createEnv({
 
     LANGFUSE_SECRET_KEY: z.string(),
     LANGFUSE_PUBLIC_KEY: z.string(),
+    LANGFUSE_BASE_URL: z.string().url().default('https://us.cloud.langfuse.com'),
 
     COHERE_API_KEY: z.string(),
     ANSARI_API_KEY: z.string(),

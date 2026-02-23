@@ -18,6 +18,7 @@ import { generateQueries } from '@/chat/generate-queries';
 import { rerankChunks } from '@/lib/cohere';
 import { detectLanguage } from '@/chat/detect-language';
 import { optionalAuth } from '@/middlewares/auth';
+import { propagateAttributes } from '@langfuse/tracing';
 
 const singleChatRoutes = new Hono();
 
@@ -57,122 +58,124 @@ singleChatRoutes.post(
     const sessionId = body.chatId ?? uuidv4();
     const userId = c.var.session?.user?.id;
 
-    const bookId = c.req.param('bookId');
-    const versionId = c.req.param('versionId');
+    return propagateAttributes({ userId, sessionId }, async () => {
+      const bookId = c.req.param('bookId');
+      const versionId = c.req.param('versionId');
 
-    // get last 6 messages
-    const lastMessage = body.messages[body.messages.length - 1].content;
-    const messages = body.messages.slice(0, body.messages.length - 1);
-    const chatHistory = messages.slice(-6);
+      // get last 6 messages
+      const lastMessage = body.messages[body.messages.length - 1].content;
+      const messages = body.messages.slice(0, body.messages.length - 1);
+      const chatHistory = messages.slice(-6);
 
-    const bookDetails = await getBookDetails(bookId);
-    if ('type' in bookDetails) {
-      throw new HTTPException(400);
-    }
+      const bookDetails = await getBookDetails(bookId);
+      if ('type' in bookDetails) {
+        throw new HTTPException(400);
+      }
 
-    const version = bookDetails.book.versions.find(v => v.id === versionId);
-    if (!version) {
-      throw new Error('Version not found');
-    }
+      const version = bookDetails.book.versions.find(v => v.id === versionId);
+      if (!version) {
+        throw new Error('Version not found');
+      }
 
-    const routerResult = await routeQuery(chatHistory, lastMessage, sessionId, userId);
-    if (routerResult === 'author') {
-      const streamResult = await answerAuthorQuery({
-        author: bookDetails.book.author,
-        history: chatHistory,
-        query: lastMessage,
-        traceId,
-        sessionId,
-        userId,
-      });
-      return getStreamResult(c, traceId, streamResult);
-    }
-
-    if (routerResult === 'summary') {
-      const streamResult = await answerBookQuery({
-        bookDetails,
-        history: chatHistory,
-        query: lastMessage,
-        traceId,
-        sessionId,
-        userId,
-      });
-      return getStreamResult(c, traceId, streamResult);
-    }
-
-    const dataStream = createDataStream({
-      execute: async writer => {
-        // pass traceId to frontend to be able to give feedback (thumbs up/down)
-        writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
-        writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
-
-        const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
-        const queries = (
-          await generateQueries({ chatHistory: body.messages, sessionId, userId })
-        ).map(q => q.query);
-
-        writer.writeMessageAnnotation({
-          type: 'STATUS',
-          value: 'searching',
-          queries,
-        });
-
-        // search the queries in parallel
-        const [searchResults, queryLanguage, rerankQuery] = await Promise.all([
-          searchQueriesInParallel([...queries, lastMessage], {
-            books: [
-              {
-                id: bookDetails.book.id,
-                sourceAndVersion: `${version.source}:${version.value}`,
-              },
-            ],
-          }),
-          queryLanguagePromise,
-          (async () => {
-            if (chatHistory.length === 0) return lastMessage;
-
-            return condenseMessageHistory({
-              chatHistory,
-              query: lastMessage,
-              isRetry: body.isRetry,
-              sessionId,
-              userId,
-            });
-          })(),
-        ]);
-
-        // pass de-duplicated sources to rerank
-        const sources = await rerankChunks(rerankQuery, searchResults, {
-          topK: 20,
-        });
-
-        writer.writeMessageAnnotation({
-          type: 'STATUS',
-          value: 'generating-response',
-        });
-
-        const result = await answerRagQuery({
-          bookDetails,
+      const routerResult = await routeQuery(chatHistory, lastMessage, sessionId, userId);
+      if (routerResult === 'author') {
+        const streamResult = await answerAuthorQuery({
+          author: bookDetails.book.author,
           history: chatHistory,
-          query: lastMessage, // use last message and not ragQuery to preserve context
-          sources: sources!,
-          isRetry: body.isRetry,
+          query: lastMessage,
           traceId,
           sessionId,
-          language: queryLanguage,
           userId,
         });
-        result.mergeIntoDataStream(writer);
+        return getStreamResult(c, traceId, streamResult);
+      }
 
-        writeSourcesToStream(writer, sources);
-      },
-      onError: error => {
-        console.log(error);
-        return error instanceof Error ? error.message : String(error);
-      },
+      if (routerResult === 'summary') {
+        const streamResult = await answerBookQuery({
+          bookDetails,
+          history: chatHistory,
+          query: lastMessage,
+          traceId,
+          sessionId,
+          userId,
+        });
+        return getStreamResult(c, traceId, streamResult);
+      }
+
+      const dataStream = createDataStream({
+        execute: async writer => {
+          // pass traceId to frontend to be able to give feedback (thumbs up/down)
+          writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
+          writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
+
+          const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
+          const queries = (
+            await generateQueries({ chatHistory: body.messages, sessionId, userId })
+          ).map(q => q.query);
+
+          writer.writeMessageAnnotation({
+            type: 'STATUS',
+            value: 'searching',
+            queries,
+          });
+
+          // search the queries in parallel
+          const [searchResults, queryLanguage, rerankQuery] = await Promise.all([
+            searchQueriesInParallel([...queries, lastMessage], {
+              books: [
+                {
+                  id: bookDetails.book.id,
+                  sourceAndVersion: `${version.source}:${version.value}`,
+                },
+              ],
+            }),
+            queryLanguagePromise,
+            (async () => {
+              if (chatHistory.length === 0) return lastMessage;
+
+              return condenseMessageHistory({
+                chatHistory,
+                query: lastMessage,
+                isRetry: body.isRetry,
+                sessionId,
+                userId,
+              });
+            })(),
+          ]);
+
+          // pass de-duplicated sources to rerank
+          const sources = await rerankChunks(rerankQuery, searchResults, {
+            topK: 20,
+          });
+
+          writer.writeMessageAnnotation({
+            type: 'STATUS',
+            value: 'generating-response',
+          });
+
+          const result = await answerRagQuery({
+            bookDetails,
+            history: chatHistory,
+            query: lastMessage, // use last message and not ragQuery to preserve context
+            sources: sources!,
+            isRetry: body.isRetry,
+            traceId,
+            sessionId,
+            language: queryLanguage,
+            userId,
+          });
+          result.mergeIntoDataStream(writer);
+
+          writeSourcesToStream(writer, sources);
+        },
+        onError: error => {
+          console.log(error);
+          return error instanceof Error ? error.message : String(error);
+        },
+      });
+
+      return dataStreamToResponse(c, dataStream);
     });
-
-    return dataStreamToResponse(c, dataStream);
   },
 );
 

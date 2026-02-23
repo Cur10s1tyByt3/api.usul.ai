@@ -11,7 +11,7 @@ import { populateAlternateSlugs } from './services/alternate-slugs';
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { LangfuseExporter } from 'langfuse-vercel';
+import { LangfuseSpanProcessor } from '@langfuse/otel';
 import { langfuseConfig } from './lib/langfuse';
 
 // before the server starts, we need to populate the cache
@@ -33,7 +33,7 @@ await populateBooks();
 console.log('✅ Populated books');
 
 const sdk = new NodeSDK({
-  traceExporter: new LangfuseExporter(langfuseConfig),
+  spanProcessors: [new LangfuseSpanProcessor(langfuseConfig)],
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
