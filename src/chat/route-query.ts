@@ -1,6 +1,6 @@
 import { langfuse } from '@/lib/langfuse';
-import { getLangfuseArgs, model } from '@/lib/llm';
-import { generateObject, type CoreMessage } from 'ai';
+import { generateObject, getLangfuseArgs } from '@/lib/llm';
+import type { CoreMessage } from 'ai';
 
 export async function routeQuery(
   history: CoreMessage[],
@@ -12,7 +12,6 @@ export async function routeQuery(
   const compiledPrompt = prompt.compile();
 
   const response = await generateObject({
-    model,
     output: 'no-schema',
     system: compiledPrompt,
     messages: [
@@ -22,12 +21,12 @@ export async function routeQuery(
         content: query,
       },
     ],
-    ...getLangfuseArgs({
-      name: 'Chat.OpenAI.Router', // Trace name
+    langfuse: {
+      name: 'Chat.OpenAI.Router',
       sessionId,
       userId,
       prompt,
-    }),
+    },
   });
 
   const result = response.object as {

@@ -1,7 +1,6 @@
 import { langfuse } from '@/lib/langfuse';
-import { getLangfuseArgs, model } from '@/lib/llm';
+import { generateObject } from '@/lib/llm';
 import { AppLocale } from '@/lib/locale';
-import { generateObject } from 'ai';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -13,7 +12,6 @@ export async function translateChunk(chunk: string, languageCode: AppLocale) {
   const compiledPrompt = prompt.compile();
 
   const response = await generateObject({
-    model,
     schema: schema,
     system: compiledPrompt,
     prompt: `
@@ -22,10 +20,10 @@ Language code: ${languageCode}
 Text chunk:
 ${chunk}
 `,
-    ...getLangfuseArgs({
-      name: 'Chat.OpenAI.TranslateChunk', // Trace name
+    langfuse: {
+      name: 'Chat.OpenAI.TranslateChunk',
       prompt,
-    }),
+    },
   });
 
   return response.object.translatedText;

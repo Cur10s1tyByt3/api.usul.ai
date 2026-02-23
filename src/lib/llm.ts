@@ -3,6 +3,7 @@ import { createAzure } from '@ai-sdk/azure';
 import {
   streamText as baseStreamText,
   generateText as baseGenerateText,
+  generateObject as baseGenerateObject,
   smoothStream,
   ToolSet,
 } from 'ai';
@@ -106,4 +107,32 @@ export const generateText = <
     }),
     ...getLangfuseArgs(langfuse),
   });
+};
+
+export const generateObject = ({
+  langfuse,
+  model: modelName = 'large',
+  ...params
+}: Omit<
+  Parameters<typeof baseGenerateObject>[0],
+  'model' | 'experimental_telemetry'
+> & {
+  langfuse?: LangfuseTracingOptions;
+  model?: 'mini' | 'large';
+}) => {
+  return baseGenerateObject({
+    model: modelName === 'mini' ? miniModel : model,
+    ...params,
+    ...(env.AZURE_BASE_DEPLOYMENT === 'usul-gpt-5.1-chat' && {
+      temperature: 1,
+      providerOptions: {
+        ...params.providerOptions,
+        azure: {
+          reasoningEffort: 'low' as const,
+          ...(params.providerOptions as { azure?: { reasoningEffort?: string } } | undefined)?.azure,
+        },
+      },
+    }),
+    ...getLangfuseArgs(langfuse),
+  } as Parameters<typeof baseGenerateObject>[0]);
 };
