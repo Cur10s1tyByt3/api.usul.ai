@@ -43,7 +43,9 @@ export const env = createEnv({
     LANGFUSE_PUBLIC_KEY: z.string(),
     LANGFUSE_BASE_URL: z.string().url().default('https://us.cloud.langfuse.com'),
 
-    COHERE_API_KEY: z.string(),
+    AZURE_COHERE_ENDPOINT_URL: z.string().url(),
+    AZURE_COHERE_API_KEY: z.string(),
+    AZURE_COHERE_RERANK_DEPLOYMENT: z.string(),
     ANSARI_API_KEY: z.string(),
   },
   runtimeEnv: process.env,

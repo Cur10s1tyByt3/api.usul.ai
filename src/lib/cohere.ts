@@ -1,29 +1,41 @@
 import type { AzureSearchResult } from '@/book-search/search';
 import { env } from '@/env';
-import { CohereClient } from 'cohere-ai';
 
-const cohere = new CohereClient({
-  token: env.COHERE_API_KEY,
-});
+interface CohereRerankResult {
+  index: number;
+  relevance_score: number;
+}
+
+interface CohereRerankResponse {
+  results: CohereRerankResult[];
+}
 
 export const rerankChunks = async (
   query: string,
   chunks: AzureSearchResult[],
   options?: { topK?: number },
 ) => {
-  // DISABLED COHERE
-  // const response = await cohere.rerank({
-  //   documents: chunks.map(chunk => chunk.node.text),
-  //   query,
-  //   topN: options?.topK,
-  // });
+  const response = await fetch(env.AZURE_COHERE_ENDPOINT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: env.AZURE_COHERE_API_KEY,
+    },
+    body: JSON.stringify({
+      model: env.AZURE_COHERE_RERANK_DEPLOYMENT,
+      query,
+      documents: chunks.map(chunk => chunk.node.text),
+      top_n: options?.topK,
+    }),
+  });
 
-  // return response.results.map(result => chunks[result.index]!);
-
-  const sorted = chunks.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-
-  if (options?.topK) {
-    return sorted.slice(0, options?.topK ?? sorted.length);
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `Cohere rerank failed with status ${response.status}: ${errorBody}`,
+    );
   }
-  return sorted;
+
+  const data: CohereRerankResponse = await response.json();
+  return data.results.map(result => chunks[result.index]!);
 };
