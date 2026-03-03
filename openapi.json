@@ -55,6 +55,10 @@
     {
       "name": "System",
       "description": "System and utility endpoints"
+    },
+    {
+      "name": "V1",
+      "description": "V1 API endpoints for content and vector search"
     }
   ],
   "paths": {
@@ -2379,6 +2383,151 @@
         }
       }
     },
+    "/v1/vector-search/{bookId}/{versionId}": {
+      "get": {
+        "tags": ["V1"],
+        "summary": "Vector search within a book version",
+        "description": "Perform a vector (semantic) search within a specific book version. Requires bearer token authentication.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "bookId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The ID of the book to search within"
+          },
+          {
+            "name": "versionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The version ID of the book to search within"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "minLength": 1 },
+            "description": "Search query"
+          },
+          {
+            "name": "include_chapters",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["true", "false"], "default": "false" },
+            "description": "Whether to include chapter metadata in results"
+          },
+          {
+            "name": "include_details",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["true", "false"], "default": "false" },
+            "description": "Whether to include book details in each result"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 50, "default": 10 },
+            "description": "Number of results per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vector search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/V1SearchResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid or missing bearer token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/content-search": {
+      "get": {
+        "tags": ["V1"],
+        "summary": "Content search across books",
+        "description": "Perform a text or vector search across books. Optionally filter by specific book IDs and version IDs.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "minLength": 1 },
+            "description": "Search query"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "enum": ["text", "vector"] },
+            "description": "Search type: 'text' for keyword search, 'vector' for semantic search"
+          },
+          {
+            "name": "books",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Comma-separated list of bookId:versionId pairs to search within (e.g., 'book1:v1,book2:v2')"
+          },
+          {
+            "name": "include_chapters",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["true", "false"], "default": "false" },
+            "description": "Whether to include chapter metadata in results"
+          },
+          {
+            "name": "include_details",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["true", "false"], "default": "false" },
+            "description": "Whether to include book details in each result"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 50, "default": 10 },
+            "description": "Number of results per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/V1SearchResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/total": {
       "get": {
         "tags": ["System"],
@@ -3144,6 +3293,73 @@
           "results": { "type": "array", "items": { "type": "object" } }
         },
         "required": ["total", "totalPages", "perPage", "currentPage", "results"]
+      },
+      "V1SearchResponse": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "integer", "description": "Total number of matching results" },
+          "totalPages": { "type": "integer", "description": "Total number of pages" },
+          "perPage": { "type": "integer", "description": "Results per page" },
+          "currentPage": { "type": "integer", "description": "Current page number" },
+          "hasNextPage": { "type": "boolean", "description": "Whether there is a next page" },
+          "hasPreviousPage": { "type": "boolean", "description": "Whether there is a previous page" },
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/V1SearchResult" }
+          }
+        },
+        "required": ["total", "totalPages", "perPage", "currentPage", "hasNextPage", "hasPreviousPage", "results"]
+      },
+      "V1SearchResult": {
+        "type": "object",
+        "properties": {
+          "score": { "type": "number", "description": "Relevance score of the result" },
+          "versionId": { "type": "string", "description": "The version ID of the matched book" },
+          "node": {
+            "type": "object",
+            "properties": {
+              "text": { "type": "string", "description": "The matched text content (omitted when highlights are present for text search)" },
+              "highlights": {
+                "type": "array",
+                "items": { "type": "object" },
+                "description": "Highlighted text snippets (only present for text search results)"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "bookId": { "type": "string", "description": "The ID of the book" },
+                  "page": { "type": "integer", "description": "Page number in the book" },
+                  "vol": { "type": "string", "description": "Volume number" },
+                  "chapters": {
+                    "type": "array",
+                    "items": { "type": "object" },
+                    "description": "Chapter information (only present when include_chapters=true)"
+                  }
+                }
+              }
+            }
+          },
+          "book": {
+            "type": "object",
+            "description": "Book details (only present when include_details=true)",
+            "properties": {
+              "id": { "type": "string" },
+              "slug": { "type": "string" },
+              "primaryName": { "type": "string" },
+              "secondaryName": { "type": "string" },
+              "author": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "primaryName": { "type": "string" },
+                  "secondaryName": { "type": "string" },
+                  "year": { "type": "integer" }
+                }
+              }
+            }
+          }
+        }
       },
       "ErrorResponse": {
         "type": "object",
