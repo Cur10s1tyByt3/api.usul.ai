@@ -32,8 +32,16 @@ console.log('✅ Populated authors');
 await populateBooks();
 console.log('✅ Populated books');
 
+const allowedScopes = ['langfuse-sdk', 'ai', 'openai'];
+
 const sdk = new NodeSDK({
-  spanProcessors: [new LangfuseSpanProcessor(langfuseConfig)],
+  spanProcessors: [
+    new LangfuseSpanProcessor({
+      ...langfuseConfig,
+      shouldExportSpan: ({ otelSpan }) =>
+        allowedScopes.includes(otelSpan.instrumentationScope.name),
+    }),
+  ],
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
