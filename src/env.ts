@@ -28,6 +28,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
 
     RESEND_API_KEY: z.string(),
+    RESEND_AUDIENCE_ID: z.string(),
 
     AZURE_ENDPOINT_URL: z.string().url(),
     AZURE_SECRET_KEY: z.string(),

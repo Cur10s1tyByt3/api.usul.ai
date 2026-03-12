@@ -4,7 +4,7 @@ import { db } from './db';
 import { env } from '@/env';
 import { magicLink } from 'better-auth/plugins';
 import LoginEmail from '../../emails/templates/login';
-import { sendEmail } from './resend';
+import { resend, sendEmail } from './resend';
 import { allowedOrigins } from '../config';
 
 export const auth = betterAuth({
@@ -48,6 +48,24 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // Cache duration in seconds
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          if (!user.email) return;
+
+          try {
+            await resend.contacts.create({
+              email: user.email,
+              audienceId: env.RESEND_AUDIENCE_ID,
+            });
+          } catch (e) {
+            console.error('Failed to add user to mailing list:', e);
+          }
+        },
+      },
     },
   },
 });
