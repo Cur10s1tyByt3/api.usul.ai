@@ -1,5 +1,5 @@
 import { localeQueryValidator } from '@/validators/locale';
-import { getAllEmpires, getEmpireBySlug, getEmpireCount } from '@/services/empire';
+import { getAllEmpires, getEmpireBySlug, getEmpireCount, getEmpiresHierarchy } from '@/services/empire';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -28,6 +28,12 @@ empireRoutes.get(
     return c.json(empires);
   },
 );
+
+empireRoutes.get('/hierarchy', localeQueryValidator, c => {
+  const { locale } = c.req.valid('query');
+  const hierarchy = getEmpiresHierarchy(locale);
+  return c.json(hierarchy);
+});
 
 empireRoutes.get('/count', async c => {
   const count = await getEmpireCount();

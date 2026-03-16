@@ -1232,6 +1232,40 @@
         }
       }
     },
+    "/region/hierarchy": {
+      "get": {
+        "tags": ["Regions"],
+        "summary": "Get region hierarchy",
+        "description": "Retrieve all regions as a nested tree structure based on parent-child relationships",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Region hierarchy retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegionHierarchyItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/region/count": {
       "get": {
         "tags": ["Regions"],
@@ -1351,6 +1385,40 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Empire"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empire/hierarchy": {
+      "get": {
+        "tags": ["Empires"],
+        "summary": "Get empire hierarchy",
+        "description": "Retrieve all empires as a nested tree structure based on parent-child relationships",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["en", "ar"]
+            },
+            "description": "Locale for localized content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Empire hierarchy retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpireHierarchyItem"
                   }
                 }
               }
@@ -2764,6 +2832,43 @@
         },
         "required": ["id", "slug", "name"]
       },
+      "RegionHierarchyItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the region"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
+          "primaryName": {
+            "type": "string",
+            "description": "Primary display name"
+          },
+          "secondaryName": {
+            "type": "string",
+            "description": "Secondary display name (e.g. Arabic)"
+          },
+          "numberOfAuthors": {
+            "type": "integer",
+            "description": "Number of authors in this region"
+          },
+          "numberOfBooks": {
+            "type": "integer",
+            "description": "Number of books in this region"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegionHierarchyItem"
+            },
+            "description": "Child regions"
+          }
+        },
+        "required": ["id", "slug", "primaryName", "numberOfAuthors", "numberOfBooks"]
+      },
       "Empire": {
         "type": "object",
         "properties": {
@@ -2797,6 +2902,43 @@
           }
         },
         "required": ["id", "slug", "numberOfAuthors", "numberOfBooks"]
+      },
+      "EmpireHierarchyItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the empire"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier"
+          },
+          "primaryName": {
+            "type": "string",
+            "description": "Primary display name"
+          },
+          "secondaryName": {
+            "type": "string",
+            "description": "Secondary display name (e.g. Arabic)"
+          },
+          "numberOfAuthors": {
+            "type": "integer",
+            "description": "Number of authors in this empire"
+          },
+          "numberOfBooks": {
+            "type": "integer",
+            "description": "Number of books in this empire"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmpireHierarchyItem"
+            },
+            "description": "Child empires"
+          }
+        },
+        "required": ["id", "slug", "primaryName", "numberOfAuthors", "numberOfBooks"]
       },
       "Genre": {
         "type": "object",

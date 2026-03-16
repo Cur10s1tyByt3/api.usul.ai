@@ -168,6 +168,7 @@ model AdvancedGenreName {
 
 model Region {
   id                   String           @id
+  parentId             String?
   slug                 String           @unique
   numberOfAuthors      Int              @default(0)
   numberOfBooks        Int              @default(0)
@@ -200,6 +201,7 @@ model RegionOverview {
 
 model Empire {
   id                   String           @id
+  parentId             String?
   slug                 String           @unique
   numberOfAuthors      Int              @default(0)
   numberOfBooks        Int              @default(0)

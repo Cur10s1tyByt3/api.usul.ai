@@ -1,6 +1,7 @@
 import { makeRegionDto, RegionDto } from '@/dto/region.dto';
 import { db } from '@/lib/db';
 import { PathLocale } from '@/lib/locale';
+import { getPrimaryLocalizedText, getSecondaryLocalizedText } from '@/lib/localization';
 import { env } from '@/env';
 import fs from 'fs';
 import path from 'path';
@@ -63,6 +64,73 @@ export const getAllRegions = (
   }
 
   return regions.map(region => makeRegionDto(region, locale));
+};
+
+export const getRegionsHierarchy = (locale: PathLocale = 'en') => {
+  const regions = Object.values(regionIdToRegion ?? {});
+
+  type TreeNode = {
+    id: string;
+    slug: string;
+    primaryName: string;
+    secondaryName?: string;
+    numberOfAuthors: number;
+    numberOfBooks: number;
+    children?: TreeNode[];
+  };
+
+  const idToNode = new Map<string, TreeNode>();
+
+  for (const r of regions) {
+    const primaryName = getPrimaryLocalizedText(r.nameTranslations, locale) as
+      | string
+      | undefined;
+    const secondaryName = getSecondaryLocalizedText(
+      r.nameTranslations,
+      locale,
+    ) as string | undefined;
+
+    idToNode.set(r.id, {
+      id: r.id,
+      slug: r.slug,
+      primaryName: primaryName || r.transliteration || r.slug,
+      secondaryName,
+      numberOfAuthors: r.numberOfAuthors,
+      numberOfBooks: r.numberOfBooks,
+    });
+  }
+
+  const roots: TreeNode[] = [];
+
+  for (const r of regions) {
+    const node = idToNode.get(r.id)!;
+    const parentId = r.parentId ?? null;
+
+    if (!parentId) {
+      roots.push(node);
+      continue;
+    }
+
+    const parent = idToNode.get(parentId);
+    if (!parent) {
+      roots.push(node);
+      continue;
+    }
+
+    if (!parent.children) parent.children = [];
+    parent.children.push(node);
+  }
+
+  const sortHierarchy = (nodes: TreeNode[]): TreeNode[] => {
+    return nodes
+      .map(node => ({
+        ...node,
+        children: node.children ? sortHierarchy(node.children) : undefined,
+      }))
+      .sort((a, b) => a.primaryName.toLowerCase().localeCompare(b.primaryName.toLowerCase()));
+  };
+
+  return sortHierarchy(roots);
 };
 
 export const getRegionCount = async () => {

@@ -1,6 +1,7 @@
 import { makeEmpireDto, EmpireDto } from '@/dto/empire.dto';
 import { db } from '@/lib/db';
 import { PathLocale } from '@/lib/locale';
+import { getPrimaryLocalizedText, getSecondaryLocalizedText } from '@/lib/localization';
 import { env } from '@/env';
 import fs from 'fs';
 import path from 'path';
@@ -55,6 +56,80 @@ export const getAllEmpires = (
   }
 
   return empires.map(empire => makeEmpireDto(empire, locale));
+};
+
+export const getEmpiresHierarchy = (locale: PathLocale = 'en') => {
+  const empires = Object.values(empireIdToEmpire ?? {});
+
+  type TreeNode = {
+    id: string;
+    slug: string;
+    primaryName: string;
+    secondaryName?: string;
+    numberOfAuthors: number;
+    numberOfBooks: number;
+    hijriStartYear?: number;
+    children?: TreeNode[];
+  };
+
+  const idToNode = new Map<string, TreeNode>();
+
+  for (const e of empires) {
+    const primaryName = getPrimaryLocalizedText(e.nameTranslations, locale) as
+      | string
+      | undefined;
+    const secondaryName = getSecondaryLocalizedText(
+      e.nameTranslations,
+      locale,
+    ) as string | undefined;
+
+    idToNode.set(e.id, {
+      id: e.id,
+      slug: e.slug,
+      primaryName: primaryName || e.transliteration || e.slug,
+      secondaryName,
+      numberOfAuthors: e.numberOfAuthors,
+      numberOfBooks: e.numberOfBooks,
+      hijriStartYear: e.hijriStartYear ?? undefined,
+    });
+  }
+
+  const roots: TreeNode[] = [];
+
+  for (const e of empires) {
+    const node = idToNode.get(e.id)!;
+    const parentId = e.parentId ?? null;
+
+    if (!parentId) {
+      roots.push(node);
+      continue;
+    }
+
+    const parent = idToNode.get(parentId);
+    if (!parent) {
+      roots.push(node);
+      continue;
+    }
+
+    if (!parent.children) parent.children = [];
+    parent.children.push(node);
+  }
+
+  const sortHierarchy = (nodes: TreeNode[]): TreeNode[] => {
+    return nodes
+      .map(node => ({
+        ...node,
+        children: node.children ? sortHierarchy(node.children) : undefined,
+      }))
+      .sort((a, b) => {
+        const yearA = a.hijriStartYear ?? Infinity;
+        const yearB = b.hijriStartYear ?? Infinity;
+        if (yearA !== yearB) return yearA - yearB;
+        return a.primaryName.toLowerCase().localeCompare(b.primaryName.toLowerCase());
+      });
+  };
+
+  return sortHierarchy(roots);
 };
 
 export const getEmpireCount = async () => {
