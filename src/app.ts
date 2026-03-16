@@ -55,13 +55,15 @@ app.onError((err, c) => {
   }
 
   if (err instanceof HTTPException) {
+    const headers = new Headers(err.getResponse().headers);
+    headers.set('Cache-Control', 'no-store');
     return c.json(
       {
         status: err.status,
         message: err.message,
         ...extra,
       },
-      { status: err.status, headers: err.getResponse().headers },
+      { status: err.status, headers },
     );
   }
 
@@ -71,7 +73,7 @@ app.onError((err, c) => {
       message: 'Internal Server Error',
       ...extra,
     },
-    { status: 500 },
+    { status: 500, headers: { 'Cache-Control': 'no-store' } },
   );
 });
 
