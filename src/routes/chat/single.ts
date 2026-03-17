@@ -79,6 +79,12 @@ singleChatRoutes.post(
           },
         });
 
+        const setTraceOutput = (text: string) => {
+          rootSpan.update({ output: text });
+          rootSpan.updateTrace({ output: text });
+          rootSpan.end();
+        };
+
         const bookDetails = await getBookDetails(bookId);
         if ('type' in bookDetails) {
           throw new HTTPException(400);
@@ -99,6 +105,7 @@ singleChatRoutes.post(
             sessionId,
             userId,
           });
+          streamResult.text.then(setTraceOutput).catch(() => rootSpan.end());
           return getStreamResult(c, traceId, streamResult);
         }
 
@@ -111,74 +118,83 @@ singleChatRoutes.post(
             sessionId,
             userId,
           });
+          streamResult.text.then(setTraceOutput).catch(() => rootSpan.end());
           return getStreamResult(c, traceId, streamResult);
         }
 
         const dataStream = createDataStream({
           execute: async writer => {
-            // pass traceId to frontend to be able to give feedback (thumbs up/down)
-            writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
-            writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
+            try {
+              // pass traceId to frontend to be able to give feedback (thumbs up/down)
+              writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
+              writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
 
-            const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
-            const queries = (
-              await generateQueries({ chatHistory: body.messages, sessionId, userId })
-            ).map(q => q.query);
+              const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
+              const queries = (
+                await generateQueries({ chatHistory: body.messages, sessionId, userId })
+              ).map(q => q.query);
 
-            writer.writeMessageAnnotation({
-              type: 'STATUS',
-              value: 'searching',
-              queries,
-            });
+              writer.writeMessageAnnotation({
+                type: 'STATUS',
+                value: 'searching',
+                queries,
+              });
 
-            // search the queries in parallel
-            const [searchResults, queryLanguage, rerankQuery] = await Promise.all([
-              searchQueriesInParallel([...queries, lastMessage], {
-                books: [
-                  {
-                    id: bookDetails.book.id,
-                    sourceAndVersion: `${version.source}:${version.value}`,
-                  },
-                ],
-              }),
-              queryLanguagePromise,
-              (async () => {
-                if (chatHistory.length === 0) return lastMessage;
+              // search the queries in parallel
+              const [searchResults, queryLanguage, rerankQuery] = await Promise.all([
+                searchQueriesInParallel([...queries, lastMessage], {
+                  books: [
+                    {
+                      id: bookDetails.book.id,
+                      sourceAndVersion: `${version.source}:${version.value}`,
+                    },
+                  ],
+                }),
+                queryLanguagePromise,
+                (async () => {
+                  if (chatHistory.length === 0) return lastMessage;
 
-                return condenseMessageHistory({
-                  chatHistory,
-                  query: lastMessage,
-                  isRetry: body.isRetry,
-                  sessionId,
-                  userId,
-                });
-              })(),
-            ]);
+                  return condenseMessageHistory({
+                    chatHistory,
+                    query: lastMessage,
+                    isRetry: body.isRetry,
+                    sessionId,
+                    userId,
+                  });
+                })(),
+              ]);
 
-            // pass de-duplicated sources to rerank
-            const sources = await rerankChunks(rerankQuery, searchResults, {
-              topK: 20,
-            });
+              // pass de-duplicated sources to rerank
+              const sources = await rerankChunks(rerankQuery, searchResults, {
+                topK: 20,
+              });
 
-            writer.writeMessageAnnotation({
-              type: 'STATUS',
-              value: 'generating-response',
-            });
+              writer.writeMessageAnnotation({
+                type: 'STATUS',
+                value: 'generating-response',
+              });
 
-            const result = await answerRagQuery({
-              bookDetails,
-              history: chatHistory,
-              query: lastMessage, // use last message and not ragQuery to preserve context
-              sources: sources!,
-              isRetry: body.isRetry,
-              traceId,
-              sessionId,
-              language: queryLanguage,
-              userId,
-            });
-            result.mergeIntoDataStream(writer);
+              const result = await answerRagQuery({
+                bookDetails,
+                history: chatHistory,
+                query: lastMessage, // use last message and not ragQuery to preserve context
+                sources: sources!,
+                isRetry: body.isRetry,
+                traceId,
+                sessionId,
+                language: queryLanguage,
+                userId,
+              });
+              result.mergeIntoDataStream(writer);
 
-            writeSourcesToStream(writer, sources);
+              writeSourcesToStream(writer, sources);
+
+              const fullText = await result.text;
+              setTraceOutput(fullText);
+            } catch (e) {
+              rootSpan.end();
+              throw e;
+            }
           },
           onError: error => {
             console.log(error);
@@ -187,7 +203,7 @@ singleChatRoutes.post(
         });
 
         return dataStreamToResponse(c, dataStream);
-      });
+      }, { endOnExit: false });
     });
   },
 );

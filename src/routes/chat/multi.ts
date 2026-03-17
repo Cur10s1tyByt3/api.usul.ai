@@ -87,6 +87,12 @@ multiChatRoutes.post(
           },
         });
 
+        const setTraceOutput = (text: string) => {
+          rootSpan.update({ output: text });
+          rootSpan.updateTrace({ output: text });
+          rootSpan.end();
+        };
+
         const resolvedBookIds = new Set<string>();
         if (body.bookIds.length > 0) {
           body.bookIds.forEach(bookId => resolvedBookIds.add(bookId));
@@ -117,134 +123,133 @@ multiChatRoutes.post(
 
         const dataStream = createDataStream({
           execute: async writer => {
-            // pass traceId to frontend to be able to give feedback (thumbs up/down)
-            writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
-
-            // Check if this is an example query and if we have a cached response
-            // Skip cache if this is a retry/regeneration
             try {
-              const cachedResponse =
-                !body.isRetry
-                  ? await getCachedResponse(lastMessage, locale)
-                  : null;
+              // pass traceId to frontend to be able to give feedback (thumbs up/down)
+              writer.writeMessageAnnotation({ type: 'CHAT_ID', value: traceId });
 
-              if (cachedResponse) {
-                // Stream cached response
-                writer.writeMessageAnnotation({
-                  type: 'STATUS',
-                  value: 'searching',
-                  queries: cachedResponse.queries,
-                });
-
-                writer.writeMessageAnnotation({
-                  type: 'STATUS',
-                  value: 'generating-response',
-                });
-
-                // Create a streamText-like result from cached text and merge it
-                try {
-                  const cachedStream = createCachedTextStream(cachedResponse.text);
-                  // Await the merge to ensure all text is streamed before continuing
-                  await cachedStream.mergeIntoDataStream(writer);
-
-                  // Get book details from cached sources
-                  const sourcesBooks = [
-                    ...new Set(
-                      cachedResponse.sources.map(source => source.node.metadata.bookId),
-                    ),
-                  ]
-                    .map(bookId => getBookById(bookId, locale))
-                    .filter(Boolean) as BookDto[];
-
-                  writeSourcesToStream(writer, cachedResponse.sources, sourcesBooks);
-                  return;
-                } catch (streamError) {
-                  console.error('Error streaming cached response, falling back to normal flow:', streamError);
-                  // Fall through to normal flow if streaming fails
-                }
-              }
-            } catch (cacheError) {
-              console.error('Error checking cache, falling back to normal flow:', cacheError);
-              // Fall through to normal flow if cache check fails
-            }
-
-            // Normal flow for non-cached queries
-            writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
-
-            const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
-            const queries = (
-              await generateQueries({ chatHistory: body.messages, sessionId, userId })
-            ).map(q => q.query);
-
-            writer.writeMessageAnnotation({
-              type: 'STATUS',
-              value: 'searching',
-              queries,
-            });
-
-            // search the queries in parallel
-            const [searchResults, queryLanguage, rerankQuery] = await Promise.all([
-              searchQueriesInParallel([...queries, lastMessage], {
-                books: books.length > 0 ? books.map(book => ({ id: book.id })) : undefined,
-              }),
-              queryLanguagePromise,
-              (async () => {
-                if (chatHistory.length === 0) return lastMessage;
-
-                return condenseMessageHistory({
-                  chatHistory,
-                  query: lastMessage,
-                  isRetry: body.isRetry,
-                  sessionId,
-                  userId,
-                });
-              })(),
-            ]);
-
-            // pass de-duplicated sources to rerank
-            const sources = await rerankChunks(rerankQuery, searchResults, {
-              topK: 20,
-            });
-
-            writer.writeMessageAnnotation({
-              type: 'STATUS',
-              value: 'generating-response',
-            });
-
-            const result = await answerMultiBookRagQuery({
-              history: chatHistory,
-              query: lastMessage, // use last message and not ragQuery to preserve context
-              sources,
-              isRetry: body.isRetry,
-              traceId,
-              sessionId,
-              language: queryLanguage,
-              userId,
-            });
-
-            // Stream the result
-            result.mergeIntoDataStream(writer);
-
-            // if there are books specified in filters, use them to get book details, otherwise use sources to get book details
-            const sourcesBooks =
-              books.length > 0
-                ? books
-                : ([...new Set(sources.map(source => source.node.metadata.bookId))]
-                  .map(bookId => getBookById(bookId, locale))
-                  .filter(Boolean) as BookDto[]);
-
-            writeSourcesToStream(writer, sources, sourcesBooks);
-
-            // Cache the response if this is an example query
-            // We need to wait for the stream to complete before caching
-            const isExample = isExampleQuery(lastMessage, locale);
-            if (isExample) {
-              // Get the full text from the result (this will wait for streaming to complete)
+              // Check if this is an example query and if we have a cached response
+              // Skip cache if this is a retry/regeneration
               try {
-                const fullText = await result.text;
+                const cachedResponse =
+                  !body.isRetry
+                    ? await getCachedResponse(lastMessage, locale)
+                    : null;
 
-                if (fullText) {
-                  // Cache in the background - don't block the response if caching fails
+                if (cachedResponse) {
+                  // Stream cached response
+                  writer.writeMessageAnnotation({
+                    type: 'STATUS',
+                    value: 'searching',
+                    queries: cachedResponse.queries,
+                  });
+
+                  writer.writeMessageAnnotation({
+                    type: 'STATUS',
+                    value: 'generating-response',
+                  });
+
+                  // Create a streamText-like result from cached text and merge it
+                  try {
+                    const cachedStream = createCachedTextStream(cachedResponse.text);
+                    // Await the merge to ensure all text is streamed before continuing
+                    await cachedStream.mergeIntoDataStream(writer);
+
+                    // Get book details from cached sources
+                    const sourcesBooks = [
+                      ...new Set(
+                        cachedResponse.sources.map(source => source.node.metadata.bookId),
+                      ),
+                    ]
+                      .map(bookId => getBookById(bookId, locale))
+                      .filter(Boolean) as BookDto[];
+
+                    writeSourcesToStream(writer, cachedResponse.sources, sourcesBooks);
+                    setTraceOutput(cachedResponse.text);
+                    return;
+                  } catch (streamError) {
+                    console.error('Error streaming cached response, falling back to normal flow:', streamError);
+                    // Fall through to normal flow if streaming fails
+                  }
+                }
+              } catch (cacheError) {
+                console.error('Error checking cache, falling back to normal flow:', cacheError);
+                // Fall through to normal flow if cache check fails
+              }
+
+              // Normal flow for non-cached queries
+              writer.writeMessageAnnotation({ type: 'STATUS', value: 'generating-queries' });
+
+              const queryLanguagePromise = detectLanguage({ query: lastMessage, sessionId, userId });
+              const queries = (
+                await generateQueries({ chatHistory: body.messages, sessionId, userId })
+              ).map(q => q.query);
+
+              writer.writeMessageAnnotation({
+                type: 'STATUS',
+                value: 'searching',
+                queries,
+              });
+
+              // search the queries in parallel
+              const [searchResults, queryLanguage, rerankQuery] = await Promise.all([
+                searchQueriesInParallel([...queries, lastMessage], {
+                  books: books.length > 0 ? books.map(book => ({ id: book.id })) : undefined,
+                }),
+                queryLanguagePromise,
+                (async () => {
+                  if (chatHistory.length === 0) return lastMessage;
+
+                  return condenseMessageHistory({
+                    chatHistory,
+                    query: lastMessage,
+                    isRetry: body.isRetry,
+                    sessionId,
+                    userId,
+                  });
+                })(),
+              ]);
+
+              // pass de-duplicated sources to rerank
+              const sources = await rerankChunks(rerankQuery, searchResults, {
+                topK: 20,
+              });
+
+              writer.writeMessageAnnotation({
+                type: 'STATUS',
+                value: 'generating-response',
+              });
+
+              const result = await answerMultiBookRagQuery({
+                history: chatHistory,
+                query: lastMessage, // use last message and not ragQuery to preserve context
+                sources,
+                isRetry: body.isRetry,
+                traceId,
+                sessionId,
+                language: queryLanguage,
+                userId,
+              });
+
+              // Stream the result
+              result.mergeIntoDataStream(writer);
+
+              // if there are books specified in filters, use them to get book details, otherwise use sources to get book details
+              const sourcesBooks =
+                books.length > 0
+                  ? books
+                  : ([...new Set(sources.map(source => source.node.metadata.bookId))]
+                    .map(bookId => getBookById(bookId, locale))
+                    .filter(Boolean) as BookDto[]);
+
+              writeSourcesToStream(writer, sources, sourcesBooks);
+
+              const fullText = await result.text;
+              setTraceOutput(fullText);
+
+              // Cache the response if this is an example query
+              const isExample = isExampleQuery(lastMessage, locale);
+              if (isExample && fullText) {
+                try {
                   await setCachedResponse(
                     lastMessage,
                     locale,
@@ -255,15 +260,18 @@ multiChatRoutes.post(
                       language: queryLanguage,
                     },
                   );
+                } catch (error) {
+                  console.error('Failed to cache example query response:', error);
+                  console.error('Error details:', {
+                    locale,
+                    query: lastMessage.substring(0, 50),
+                    error: error instanceof Error ? error.message : String(error),
+                  });
                 }
-              } catch (error) {
-                console.error('Failed to cache example query response:', error);
-                console.error('Error details:', {
-                  locale,
-                  query: lastMessage.substring(0, 50),
-                  error: error instanceof Error ? error.message : String(error),
-                });
               }
+            } catch (e) {
+              rootSpan.end();
+              throw e;
             }
           },
           onError: error => {
@@ -273,7 +281,7 @@ multiChatRoutes.post(
         });
 
         return dataStreamToResponse(c, dataStream);
-      });
+      }, { endOnExit: false });
     });
   },
 );
