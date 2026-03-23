@@ -58,7 +58,9 @@ singleChatRoutes.post(
     const sessionId = body.chatId ?? uuidv4();
     const userId = c.var.session?.user?.id;
 
-    return propagateAttributes({ userId, sessionId }, async () => {
+    return propagateAttributes(
+      { userId, sessionId, traceName: 'single-book-chat' },
+      async () => {
       return startActiveObservation('single-book-chat', async (rootSpan) => {
         const bookId = c.req.param('bookId');
         const versionId = c.req.param('versionId');
@@ -68,7 +70,7 @@ singleChatRoutes.post(
         const messages = body.messages.slice(0, body.messages.length - 1);
         const chatHistory = messages.slice(-6);
 
-        rootSpan.updateTrace({ input: lastMessage });
+        rootSpan.updateTrace({ name: 'single-book-chat', input: lastMessage });
         rootSpan.update({
           input: {
             query: lastMessage,
@@ -204,7 +206,8 @@ singleChatRoutes.post(
 
         return dataStreamToResponse(c, dataStream);
       }, { endOnExit: false });
-    });
+    },
+  );
   },
 );
 

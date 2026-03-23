@@ -68,14 +68,16 @@ multiChatRoutes.post(
     const sessionId = body.chatId ?? uuidv4();
     const userId = c.var.session?.user?.id;
 
-    return propagateAttributes({ userId, sessionId }, async () => {
+    return propagateAttributes(
+      { userId, sessionId, traceName: 'multi-book-chat' },
+      async () => {
       return startActiveObservation('multi-book-chat', async (rootSpan) => {
         const lastMessage = body.messages[body.messages.length - 1].content;
         const messages = body.messages.slice(0, body.messages.length - 1);
         // get last 6 messages
         const chatHistory = messages.slice(-6);
 
-        rootSpan.updateTrace({ input: lastMessage });
+        rootSpan.updateTrace({ name: 'multi-book-chat', input: lastMessage });
         rootSpan.update({
           input: {
             query: lastMessage,
@@ -282,7 +284,8 @@ multiChatRoutes.post(
 
         return dataStreamToResponse(c, dataStream);
       }, { endOnExit: false });
-    });
+    },
+  );
   },
 );
 

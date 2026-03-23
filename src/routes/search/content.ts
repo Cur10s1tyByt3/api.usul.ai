@@ -1,6 +1,6 @@
 import { AzureSearchResult, searchBook } from '@/book-search/search';
 import { langfuse } from '@/lib/langfuse';
-import { generateObject, getLangfuseArgs } from '@/lib/llm';
+import { generateObject } from '@/lib/llm';
 import { chunk } from '@/lib/utils';
 import { getBookDetails } from '@/routes/book/details';
 import { localeSchema } from '@/validators/locale';
@@ -8,6 +8,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 
 const contentSearchRoutes = new Hono();
 
@@ -75,54 +76,63 @@ contentSearchRoutes.get(
 );
 
 const summarizeChunks = async (query: string, results: AzureSearchResult[]) => {
-  const formattedResults = results.map(match => ({
-    score: match.score,
-    text: match.node.text,
-    metadata: match.node.metadata,
-  }));
+  return propagateAttributes({ traceName: 'search-content-enhance' }, async () => {
+    return startActiveObservation('search-content-enhance', async rootSpan => {
+      rootSpan.updateTrace({ name: 'search-content-enhance', input: query });
 
-  const batches = chunk(formattedResults, 5);
-  const prompt = await langfuse.getPrompt('search.enhance');
-  const compiledPrompt = prompt.compile();
+      const formattedResults = results.map(match => ({
+        score: match.score,
+        text: match.node.text,
+        metadata: match.node.metadata,
+      }));
 
-  const summaries = await Promise.all(
-    batches.map(async batch => {
-      const result = await generateObject({
-        system: compiledPrompt,
-        output: 'no-schema',
-        messages: [
-          {
-            role: 'user',
-            content: `
+      const batches = chunk(formattedResults, 5);
+      const prompt = await langfuse.getPrompt('search.enhance');
+      const compiledPrompt = prompt.compile();
+
+      const summaries = await Promise.all(
+        batches.map(async batch => {
+          const result = await generateObject({
+            system: compiledPrompt,
+            output: 'no-schema',
+            messages: [
+              {
+                role: 'user',
+                content: `
 Search Query: ${query}
 
 Results: 
 ${batch.map((r, idx) => `[${idx}]. ${r.text}`).join('\n\n')}
     `.trim(),
-          },
-        ],
-        langfuse: {
-          name: 'Search.OpenAI.Book',
-          prompt,
-        },
+              },
+            ],
+            langfuse: {
+              name: 'Search.OpenAI.Book',
+              prompt,
+            },
+          });
+
+          return result.object as Record<number, string>;
+        }),
+      );
+
+      const mapped = summaries.flatMap((parsed, idx) => {
+        const batch = batches[idx];
+
+        return batch.map((node, idx) => {
+          if (!parsed[idx]) {
+            return node;
+          }
+
+          return {
+            ...node,
+            text: replaceHighlights(parsed[idx]),
+          };
+        });
       });
 
-      return result.object as Record<number, string>;
-    }),
-  );
-
-  return summaries.flatMap((parsed, idx) => {
-    const batch = batches[idx];
-
-    return batch.map((node, idx) => {
-      if (!parsed[idx]) {
-        return node;
-      }
-
-      return {
-        ...node,
-        text: replaceHighlights(parsed[idx]),
-      };
+      rootSpan.updateTrace({ output: { resultCount: mapped.length } });
+      return mapped;
     });
   });
 };
