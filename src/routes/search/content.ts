@@ -8,12 +8,15 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { optionalAuth } from '@/middlewares/auth';
+import { resolveLangfuseUserId } from '@/lib/langfuse-user';
 import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 
 const contentSearchRoutes = new Hono();
 
 contentSearchRoutes.get(
   '/content',
+  optionalAuth,
   zValidator(
     'query',
     z.object({
@@ -68,15 +71,23 @@ contentSearchRoutes.get(
       });
     }
 
+    const userId = resolveLangfuseUserId(c.var.session);
+
     return c.json({
       ...results,
-      results: await summarizeChunks(query, results.results),
+      results: await summarizeChunks(query, results.results, userId),
     });
   },
 );
 
-const summarizeChunks = async (query: string, results: AzureSearchResult[]) => {
-  return propagateAttributes({ traceName: 'search-content-enhance' }, async () => {
+const summarizeChunks = async (
+  query: string,
+  results: AzureSearchResult[],
+  userId: string,
+) => {
+  return propagateAttributes(
+    { userId, traceName: 'search-content-enhance' },
+    async () => {
     return startActiveObservation('search-content-enhance', async rootSpan => {
       rootSpan.updateTrace({ name: 'search-content-enhance', input: query });
 
@@ -134,7 +145,8 @@ ${batch.map((r, idx) => `[${idx}]. ${r.text}`).join('\n\n')}
       rootSpan.updateTrace({ output: { resultCount: mapped.length } });
       return mapped;
     });
-  });
+    },
+  );
 };
 
 // replace text in [[...]] with <em>...</em>

@@ -18,6 +18,7 @@ import { generateQueries } from '@/chat/generate-queries';
 import { rerankChunks } from '@/lib/cohere';
 import { detectLanguage } from '@/chat/detect-language';
 import { optionalAuth } from '@/middlewares/auth';
+import { resolveLangfuseUserId } from '@/lib/langfuse-user';
 import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 
 const singleChatRoutes = new Hono();
@@ -56,7 +57,7 @@ singleChatRoutes.post(
     const body = c.req.valid('json');
     const traceId = uuidv4();
     const sessionId = body.chatId ?? uuidv4();
-    const userId = c.var.session?.user?.id;
+    const userId = resolveLangfuseUserId(c.var.session);
 
     return propagateAttributes(
       { userId, sessionId, traceName: 'single-book-chat' },

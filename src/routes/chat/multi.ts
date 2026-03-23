@@ -25,6 +25,7 @@ import { isExampleQuery } from '@/lib/example-queries';
 import { createCachedTextStream } from '@/lib/stream-cached-text';
 import { checkAndIncrementChatLimit } from '../../lib/chat-limit';
 import { optionalAuth } from '@/middlewares/auth';
+import { resolveLangfuseUserId } from '@/lib/langfuse-user';
 import { propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 
 const multiChatRoutes = new Hono();
@@ -66,7 +67,7 @@ multiChatRoutes.post(
 
     const traceId = uuidv4();
     const sessionId = body.chatId ?? uuidv4();
-    const userId = c.var.session?.user?.id;
+    const userId = resolveLangfuseUserId(c.var.session);
 
     return propagateAttributes(
       { userId, sessionId, traceName: 'multi-book-chat' },
