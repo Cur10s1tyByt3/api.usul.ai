@@ -8,6 +8,7 @@ import {
   ToolSet,
 } from 'ai';
 import type { ChatPromptClient, TextPromptClient } from 'langfuse';
+import { withAzureDeploymentModelForObservability } from '@/lib/azure-langfuse-model';
 
 const azure = createAzure({
   baseURL: env.AZURE_ENDPOINT_URL,
@@ -15,8 +16,16 @@ const azure = createAzure({
   apiVersion: '2025-01-01-preview',
 });
 
-export const model = azure.languageModel(env.AZURE_BASE_DEPLOYMENT);
-export const miniModel = azure.languageModel('usul-gpt-5-mini');
+const AZURE_MINI_DEPLOYMENT = 'usul-gpt-5-mini';
+
+export const model = withAzureDeploymentModelForObservability(
+  azure.languageModel(env.AZURE_BASE_DEPLOYMENT),
+  env.AZURE_BASE_DEPLOYMENT,
+);
+export const miniModel = withAzureDeploymentModelForObservability(
+  azure.languageModel(AZURE_MINI_DEPLOYMENT),
+  AZURE_MINI_DEPLOYMENT,
+);
 
 export type LangfuseTracingOptions = {
   name?: string;
